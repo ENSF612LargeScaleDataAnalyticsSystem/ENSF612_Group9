@@ -1,0 +1,35 @@
+{
+  "method": "knn",
+  "split": "user_time_10pct",
+  "stage": "val",
+  "tag": "n100_cos",
+  "params": {
+    "n_neighbours": 100,
+    "similarity": "cosine"
+  },
+  "sample": 1.0,
+  "seconds_recommend": 74.26,
+  "seconds_evaluate": 20.72,
+  "k": 10,
+  "rec_rows": 136710,
+  "rec_users": 13671,
+  "recommended_items_already_rated": 0,
+  "evaluated_users": 12905,
+  "evaluated_users_without_list": 0,
+  "precision@10": 0.063843,
+  "recall@10": 0.130993,
+  "ndcg@10": 0.1081,
+  "catalog_items": 13616,
+  "coverage": 0.05332,
+  "env": {
+    "spark": "4.0.1",
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26300-SP0",
+    "machine": "AMD64",
+    "cpu_count": 4,
+    "cores": "*",
+    "driver_memory": "8g"
+  },
+  "finished_utc": "2026-11-12 19:48:24",
+  "command": "C:\\Users\\GODFRED\\612.PY\\ensf612-movielens\\src\\run.py --method knn --split user_time_10pct --stage val --n-boot 0 --tag n100_cos --param n_neighbours=100 --param similarity=cosine"
+}

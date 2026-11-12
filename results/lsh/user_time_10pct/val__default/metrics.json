@@ -1,0 +1,43 @@
+{
+  "method": "lsh",
+  "split": "user_time_10pct",
+  "stage": "val",
+  "tag": "default",
+  "params": {},
+  "seconds_recommend": 112.49,
+  "seconds_evaluate": 21.31,
+  "k": 10,
+  "rec_rows": 136710,
+  "rec_users": 13671,
+  "recommended_items_already_rated": 0,
+  "evaluated_users": 12905,
+  "evaluated_users_without_list": 0,
+  "precision@10": 0.046308,
+  "precision@10_ci95": [
+    0.04478,
+    0.047789
+  ],
+  "recall@10": 0.099417,
+  "recall@10_ci95": [
+    0.095615,
+    0.103553
+  ],
+  "ndcg@10": 0.080125,
+  "ndcg@10_ci95": [
+    0.077345,
+    0.082932
+  ],
+  "catalog_items": 13616,
+  "coverage": 0.153716,
+  "env": {
+    "spark": "4.0.1",
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26300-SP0",
+    "machine": "AMD64",
+    "cpu_count": 4,
+    "cores": "*",
+    "driver_memory": "8g"
+  },
+  "finished_utc": "2026-11-12 19:34:19",
+  "command": "C:\\Users\\GODFRED\\612.PY\\ensf612-movielens\\src\\run.py --method lsh --split user_time_10pct --stage val --tag default"
+}
