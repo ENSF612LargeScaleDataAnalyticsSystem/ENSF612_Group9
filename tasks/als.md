@@ -81,16 +81,16 @@ on Windows, `.venv/bin/python` on macOS/Linux (written as `python` below).
   If a split fails, read the end of `logs/final_als_<split>.log`, fix the environment cause (memory,
   disk space, another Spark job running) and run the same command again. If it fails twice, **STOP**.
 
-- [ ] **10. Push the results now**, so they are safe: `python tools/member.py push als`.
+- [x] **10. Push the results now**, so they are safe: `python tools/member.py push als`.
   If the push asks for a GitHub login, **STOP** and ask the member to sign in, then run it again.
 
-- [ ] **11. Compare with the popularity baseline** (paired bootstrap, a few minutes each):
+- [x] **11. Compare with the popularity baseline** (paired bootstrap, a few minutes each):
   ```
   python tools/compare.py results/als/user_time/test   results/popularity/user_time/test   > logs/compare_als_pop_user_time.log 2>&1
   python tools/compare.py results/als/global_time/test results/popularity/global_time/test > logs/compare_als_pop_global_time.log 2>&1
   ```
 
-- [ ] **12. Report section on the evaluation protocol (`report/evaluation.md`).**
+- [x] **12. Report section on the evaluation protocol (`report/evaluation.md`).**
   Write `report/evaluation.md` for the whole group. Sources: README section 5 (stages, evaluation),
 `src/evaluate.py`, `src/run.py`, `tools/compare.py`. Do not run anything.
 
@@ -114,7 +114,7 @@ Then compare ALS with exact kNN on `user_time` (the kNN run is already in the re
 python tools/compare.py results/als/user_time/test results/knn/user_time/test > logs/compare_als_knn.log 2>&1
 ```
 
-- [ ] **13. Write `report/als.md`** (create the `report/` folder if needed). Plain, short sentences;
+- [x] **13. Write `report/als.md`** (create the `report/` folder if needed). Plain, short sentences;
   about one page. Outline:
 
   ## 1. Method
@@ -146,7 +146,7 @@ paired ALS − kNN differences on `user_time` with their 95% intervals.
   ## 6. Limitations
   Two or three honest points (for example memory use, run time, what `global_time` can evaluate).
 
-- [ ] **14. Final push.** `python tools/member.py push als -m "als: report section"`. It prints a link:
+- [x] **14. Final push.** `python tools/member.py push als -m "als: report section"`. It prints a link:
   give that link to the member and ask them to open it in a browser and press **Create pull request**
   (into `main`). Do not merge it; the integrator merges.
 
