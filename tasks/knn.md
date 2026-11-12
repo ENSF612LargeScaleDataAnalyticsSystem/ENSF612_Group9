@@ -1,12 +1,12 @@
 # Task: exact user-kNN (`knn`) and integration
 
-You are Claude Code working for the group member who owns **knn** and who is also the **integrator**:
-the only person who pushes to `main`. This machine is the group's reference machine (tuning was done
-here, and all scalability timings are made here so that they are comparable).
+These are the steps for the group member who owns **knn** and who is also the **integrator**: the only
+person who pushes to `main`. The integrator's machine is the group's reference machine (tuning was done
+there, and all scalability timings are made there so that they are comparable).
 
 Do the steps in order. After a step is done **and verified**, change its `- [ ]` to `- [x]` in this file
-and go on. When the member says "continue", find the first unticked step and carry on. Do not stop
-between steps unless a step says **STOP**.
+and go on, so the work can always be picked up again at the first unticked step. Do not stop between
+steps unless a step says **STOP**.
 
 Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logname> <python args>` or
 `.\.venv\Scripts\python.exe tools\member.py ...` (both set Java/Hadoop).
@@ -19,8 +19,8 @@ Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logn
    on `main`, with a message to the group so that everybody pulls before testing.
 3. Long commands run in the background, one Spark job at a time.
 4. Every number in a report file is copied from a `metrics.json` or a log.
-5. Pushing publishes to the group: before each `git push` to `main`, show the member what will be
-   pushed (`git status`, `git log --oneline origin/main..HEAD`) and wait for their go-ahead.
+5. Pushing publishes to the group: before each `git push` to `main`, review what will be
+   pushed (`git status`, `git log --oneline origin/main..HEAD`).
 
 ## Part A: publish the foundation (once)
 
@@ -36,19 +36,18 @@ Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logn
   git commit -m "Shared foundation: pipeline, five methods, validation tuning, group workflow"
   ```
 
-- [x] **A2. Push to GitHub.** **STOP** and get the member's go-ahead (rule 5). Then:
+- [x] **A2. Push to GitHub.** Review what will be pushed (rule 5). Then:
   ```
   git remote get-url origin   # already set to the group repository
   git push -u origin main
   ```
-  If GitHub asks for a login, the member signs in in the browser window that opens. If the push is
+  If GitHub asks for a login, sign in in the browser window that opens. If the push is
   rejected because the GitHub repository already has commits (for example a README created on the
   website), run `git pull origin main --allow-unrelated-histories --no-rebase`, keep our files in any
   conflict, and push again. Never force-push.
 
-- [ ] **A3. Start the team.** Tell the member to send each teammate their starter prompt from
-  `tasks/README.md` (one for lsh, one for ppr, one for als), and to check that all three have write
-  access to the repository.
+- [ ] **A3. Start the team.** Tell each teammate which task file is theirs (`tasks/lsh.md`, `tasks/ppr.md`,
+  `tasks/als.md`) and check that all three have write access to the repository.
 
 ## Part B: kNN test runs and report section
 
@@ -102,7 +101,7 @@ Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logn
 
 - [ ] **D1. Are all branches there?** `git fetch origin` then `git branch -r`. Needed:
   `origin/member/knn`, `origin/member/lsh`, `origin/member/ppr`, `origin/member/als`. If one is missing,
-  **STOP** and tell the member who is still outstanding. Parts B and C do not depend on this.
+  **STOP** and note who is still outstanding. Parts B and C do not depend on this.
 
 - [ ] **D2. Merge.** On `main`, for each of the four: `git merge --no-ff origin/member/<method>`.
   Members only touch their own files, so there should be no conflicts. If there is one, or a branch
@@ -139,6 +138,6 @@ Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logn
 - [ ] **D8. Update the trackers.** Tick the finished items in `CHECKLIST.md` and replace the "Status"
   section of `README.md` with the real state.
 
-- [ ] **D9. Push `main`.** Commit, then **STOP** for the member's go-ahead (rule 5), then `git push origin main`.
+- [ ] **D9. Push `main`.** Commit, review (rule 5), then `git push origin main`.
 
-- [ ] **D10. Done.** Give the member the final results table, where the report is, and anything unresolved.
+- [ ] **D10. Done.** Share with the group: the final results table, where the report is, and anything unresolved.

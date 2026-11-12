@@ -1,6 +1,6 @@
-# CLAUDE.md
+# Contributing
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Working notes for everyone who changes or runs code in this repository: the group rules, the commands and the architecture.
 
 ENSF 612 Group 9 project: scalable top-k movie recommendation on MovieLens 20M with PySpark (local mode).
 This repo is the shared foundation (ingest, splits, evaluation, popularity baseline). Other methods
@@ -10,10 +10,9 @@ sync when behaviour changes.
 
 ## Group workflow (read first)
 
-Four members finish the project in parallel, each with their own Claude Code session; `tasks/README.md`
-explains the whole flow. If the user says which member they are (knn, lsh, ppr, als) or says "continue",
-open `tasks/<method>.md`, find the first unticked step and carry on from there, ticking steps as they are
-verified. Rules that hold in every session:
+Four members finish the project in parallel, each on their own machine and branch; `tasks/README.md`
+explains the whole flow. Each member (knn, lsh, ppr, als) works from `tasks/<method>.md`: find the first
+unticked step and carry on from there, ticking steps as they are verified. Rules that always hold:
 
 - **Shared code is frozen**: `src/`, `tests/`, `tools/`, `requirements.txt`. A member commits only the files
   listed for them in `tools/member.py` (`OWN`): `results/<method>/`, `report/<method>.md`, `tasks/<method>.md`

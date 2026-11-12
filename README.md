@@ -73,7 +73,7 @@ tools/run.ps1          Windows helper: sets JAVA_HOME/HADOOP_HOME and logs a run
 tools/make_synthetic.py  fake data in the ml-20m format, for testing
 tools/member.py        group workflow: check / pilot / test / push for one member (Section 8)
 tools/rebuild_summary.py, verify_results.py, summarize.py, compare.py   tables and checks for the report
-tasks/                 one step-by-step task file per member, plus the starter prompts
+tasks/                 one step-by-step task file per member
 report/                report sections written by the members
 tests/                 hand-checked unit tests
 reports/               generated tables for the report: data_profile.md, data_quality.json,
@@ -152,7 +152,7 @@ Results from all methods then go into `results/summary.csv` in the same format.
 
 Tuning is done and the chosen parameters are fixed in `tools/chosen.json`. The remaining work (final test
 runs, scalability runs, report) is split between the four members: see `tasks/README.md` for who does
-what, the starter prompt for each member's Claude Code session, and how the branches are merged.
+what, the steps each member follows, and how the branches are merged.
 
 ```bash
 python tools/member.py check <method>    # machine ready, data and splits identical to the group's

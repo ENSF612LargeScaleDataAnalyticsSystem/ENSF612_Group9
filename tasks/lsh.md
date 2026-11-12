@@ -1,22 +1,21 @@
 # Task: MinHash-LSH (`lsh`)
 
-You are Claude Code working for the group member who owns **lsh**. Do the steps in order. After a step is
-done **and verified**, change its `- [ ]` to `- [x]` in this file and go on to the next one. When the
-member says "continue", find the first unticked step and carry on from there. Do not stop between
-steps unless a step says **STOP**.
+These are the steps for the group member who owns **lsh**. Do them in order. After a step is done
+**and verified**, change its `- [ ]` to `- [x]` in this file and go on to the next one, so the work can
+always be picked up again at the first unticked step. Do not stop between steps unless a step says **STOP**.
 
 Run every command from the project root with the project's venv Python: `.venv\Scripts\python.exe`
 on Windows, `.venv/bin/python` on macOS/Linux (written as `python` below).
 
 ## Rules (they protect the comparison between the four methods)
 
-1. **Never edit** `src/`, `tests/`, `tools/`, `requirements.txt`, `reports/`, `README.md`, `CLAUDE.md`,
+1. **Never edit** `src/`, `tests/`, `tools/`, `requirements.txt`, `reports/`, `README.md`, `CONTRIBUTING.md`,
    `CHECKLIST.md` or another member's files. Your files are: `results/lsh/`, `report/lsh.md`, `tasks/lsh.md`.
 2. **The test stage runs once.** Parameters are fixed in `tools/chosen.json` (n_hashes=256, bands=128, similarity=cosine, n_neighbours=100); they were chosen
    on validation. Never change them, never pass `--param` yourself, never re-run a test that produced a
    `metrics.json`, whatever the numbers look like. Always use `tools/member.py test`, which enforces this.
 3. If a run crashes **before** writing `metrics.json`, nothing was scored and running it again is allowed.
-4. If something in the shared code looks wrong, **STOP** and tell the member to raise it with the group.
+4. If something in the shared code looks wrong, **STOP** and raise it with the group.
    Do not fix it locally.
 5. Long commands (ingest, split, pilot, test) take minutes to hours: start them in the background and
    wait for them to finish. Do not start two Spark jobs at once.
@@ -38,14 +37,14 @@ on Windows, `.venv/bin/python` on macOS/Linux (written as `python` below).
   Windows: `py -3.11 -m venv .venv` (Python 3.11 exactly; 3.12+ crashes PySpark on Windows).
   macOS/Linux: `python3 -m venv .venv` with Python 3.10 or newer.
   Then `python -m pip install -r requirements.txt`.
-  If Python 3.11 is missing on Windows, **STOP** and ask the member to install it
+  If Python 3.11 is missing on Windows, **STOP** until it is installed
   (`winget install Python.Python.3.11`), then continue.
 
 - [ ] **3. Java and, on Windows, the Hadoop files.**
   Needed: JDK 17 with `JAVA_HOME` set; on Windows also `winutils.exe` and `hadoop.dll` (Hadoop 3.x) in
   `C:\hadoop\bin` with `HADOOP_HOME=C:\hadoop`. README section 1 has the details. Check what is already
   there before changing anything. Installing software or setting user environment variables changes the
-  member's machine: **STOP and ask the member first**, then do it (`winget install EclipseAdoptium.Temurin.17.JDK`,
+  machine: **STOP and get its owner's go-ahead first**, then do it (`winget install EclipseAdoptium.Temurin.17.JDK`,
   `setx JAVA_HOME "..."`, `setx HADOOP_HOME C:\hadoop`).
 
 - [ ] **4. Data.**
@@ -70,7 +69,7 @@ on Windows, `.venv/bin/python` on macOS/Linux (written as `python` below).
 - [ ] **8. Reproduce the group's validation number.** `python tools/member.py pilot lsh` (a few minutes;
   on 8 GB RAM add `--driver-memory 5g`). It re-runs the chosen parameters on the 10% pilot, validation
   stage, and must print `PILOT REPRODUCED` (the group's NDCG@10 is 0.1068). If it prints `FAIL`,
-  **STOP** and report the numbers to the member; do not go on to the test stage.
+  **STOP** and report the numbers to the group; do not go on to the test stage.
 
 - [ ] **9. Final test runs.** Start in the background and wait (from half an hour to a few hours in total):
   ```
@@ -82,7 +81,7 @@ on Windows, `.venv/bin/python` on macOS/Linux (written as `python` below).
   disk space, another Spark job running) and run the same command again. If it fails twice, **STOP**.
 
 - [ ] **10. Push the results now**, so they are safe: `python tools/member.py push lsh`.
-  If the push asks for a GitHub login, **STOP** and ask the member to sign in, then run it again.
+  If the push asks for a GitHub login, **STOP** until you are signed in, then run it again.
 
 - [ ] **11. Compare with the popularity baseline** (paired bootstrap, a few minutes each):
   ```
@@ -148,8 +147,8 @@ LSH − kNN differences on `user_time`. Say in one sentence what is given up and
   Two or three honest points (for example memory use, run time, what `global_time` can evaluate).
 
 - [ ] **14. Final push.** `python tools/member.py push lsh -m "lsh: report section"`. It prints a link:
-  give that link to the member and ask them to open it in a browser and press **Create pull request**
+  open it in a browser and press **Create pull request**
   (into `main`). Do not merge it; the integrator merges.
 
-- [ ] **15. Done.** Tell the member, in a short message: the test numbers for both splits, where the
+- [ ] **15. Done.** Post a short message to the group: the test numbers for both splits, where the
   report section is, the pull-request link, and anything that went wrong on the way.

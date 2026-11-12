@@ -1,8 +1,8 @@
 # Group workflow: who does what, and how the work comes back together
 
 Tuning is finished. What is left is the final test runs, the scalability runs and the report.
-Each member runs their part with Claude Code in VS Code, on their own branch, and pushes it to
-GitHub. One person (the integrator) merges the four branches and builds the final tables.
+Each member does their part on their own machine and branch, and pushes it to GitHub. One person
+(the integrator) merges the four branches and builds the final tables.
 
 | Task file | Method | Also writes | Branch |
 |---|---|---|---|
@@ -13,49 +13,18 @@ GitHub. One person (the integrator) merges the four branches and builds the fina
 
 ## What each member does
 
-1. Install [Git](https://git-scm.com/downloads) and Claude Code for VS Code, and make sure your GitHub
-   account can write to the group repository.
-2. Open an **empty folder outside OneDrive** in VS Code (for example `C:\ensf612`), open Claude Code and
-   paste your starter prompt below.
-3. Whenever Claude stops, read what it says. If it asks for something (install Java, sign in to GitHub),
-   do it. Then type **continue**. Repeat until it says the task is done.
-4. Open the pull-request link Claude gives you at the end and press **Create pull request**. Do not merge.
+1. Install [Git](https://git-scm.com/downloads) and make sure your GitHub account can write to the
+   group repository.
+2. Clone the repository into a folder **outside OneDrive** (for example `C:\ensf612`).
+3. Read `CONTRIBUTING.md`, then open your task file and work through it from the first unticked step.
+   Tick each step when it is verified, so you can stop and pick up again at any point.
+4. At the end, open the pull-request link printed by the push command and press **Create pull request**.
+   Do not merge; the integrator merges.
 
 Expect about an hour of setup (downloads, ingest, split, checks) and then the test runs, which take from
 half an hour to a few hours depending on the method and the laptop. The laptop must stay awake and
 plugged in during the runs. You need about 10 GB of free disk space and ideally 16 GB of RAM (8 GB works
-with `--driver-memory 5g`; tell Claude your RAM if it does not ask).
-
-## Starter prompts (replace nothing, paste as is)
-
-**LSH**
-
-> I am the LSH member of ENSF 612 Group 9. If this folder does not contain the project yet, clone
-> https://github.com/ENSF612LargeScaleDataAnalyticsSystem/ENSF612_Group9.git and work inside it. Read
-> CLAUDE.md and tasks/lsh.md, then do the first unticked step and keep going step by step, ticking each
-> step in tasks/lsh.md once it is verified. Only stop where a step says STOP or when everything is ticked.
-
-**PPR**
-
-> I am the PPR member of ENSF 612 Group 9. If this folder does not contain the project yet, clone
-> https://github.com/ENSF612LargeScaleDataAnalyticsSystem/ENSF612_Group9.git and work inside it. Read
-> CLAUDE.md and tasks/ppr.md, then do the first unticked step and keep going step by step, ticking each
-> step in tasks/ppr.md once it is verified. Only stop where a step says STOP or when everything is ticked.
-
-**ALS**
-
-> I am the ALS member of ENSF 612 Group 9. If this folder does not contain the project yet, clone
-> https://github.com/ENSF612LargeScaleDataAnalyticsSystem/ENSF612_Group9.git and work inside it. Read
-> CLAUDE.md and tasks/als.md, then do the first unticked step and keep going step by step, ticking each
-> step in tasks/als.md once it is verified. Only stop where a step says STOP or when everything is ticked.
-
-**kNN and integration** (in the existing project folder on the reference machine)
-
-> I am the kNN member and the integrator of ENSF 612 Group 9. Read CLAUDE.md and tasks/knn.md, then do the
-> first unticked step and keep going step by step, ticking each step in tasks/knn.md once it is verified.
-> Only stop where a step says STOP or when everything is ticked.
-
-After that, in every later session: **continue with my task file**.
+with `--driver-memory 5g`).
 
 ## Why the results stay comparable
 
