@@ -1,0 +1,35 @@
+{
+  "method": "lsh",
+  "split": "user_time_10pct",
+  "stage": "val",
+  "tag": "h64_b64",
+  "params": {
+    "n_hashes": 64,
+    "bands": 64
+  },
+  "sample": 1.0,
+  "seconds_recommend": 265.56,
+  "seconds_evaluate": 15.04,
+  "k": 10,
+  "rec_rows": 136710,
+  "rec_users": 13671,
+  "recommended_items_already_rated": 0,
+  "evaluated_users": 12905,
+  "evaluated_users_without_list": 0,
+  "precision@10": 0.062379,
+  "recall@10": 0.12768,
+  "ndcg@10": 0.105782,
+  "catalog_items": 13616,
+  "coverage": 0.079979,
+  "env": {
+    "spark": "4.0.1",
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26300-SP0",
+    "machine": "AMD64",
+    "cpu_count": 4,
+    "cores": "*",
+    "driver_memory": "8g"
+  },
+  "finished_utc": "2026-11-12 19:59:37",
+  "command": "C:\\Users\\GODFRED\\612.PY\\ensf612-movielens\\src\\run.py --method lsh --split user_time_10pct --stage val --n-boot 0 --tag h64_b64 --param n_hashes=64 --param bands=64"
+}

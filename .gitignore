@@ -1,0 +1,17 @@
+# data is downloaded by every member, never committed
+data/
+# recommendation lists are large and can be regenerated; metrics.json and per_user (needed for the
+# paired comparisons) are small and are committed
+results/**/recs/
+# appended to by every run, so it would conflict between members; rebuilt by tools/rebuild_summary.py
+results/summary.csv
+# run logs contain local paths
+logs/
+spark-warehouse/
+metastore_db/
+derby.log
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.ipynb_checkpoints/

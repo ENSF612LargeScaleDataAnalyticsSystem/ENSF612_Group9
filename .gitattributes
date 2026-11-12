@@ -1,0 +1,4 @@
+# Same line endings in the repository on every operating system, so generated reports compare equal.
+* text=auto
+*.parquet binary
+*.crc binary

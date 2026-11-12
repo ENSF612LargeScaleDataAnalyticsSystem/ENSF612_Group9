@@ -1,0 +1,23 @@
+{
+  "knn": [
+    "n_neighbours=100",
+    "similarity=cosine"
+  ],
+  "lsh": [
+    "n_hashes=256",
+    "bands=128",
+    "similarity=cosine",
+    "n_neighbours=100"
+  ],
+  "ppr": [
+    "alpha=0.3",
+    "n_walkers=2500",
+    "beta=0.3",
+    "min_visits=10"
+  ],
+  "als": [
+    "rank=128",
+    "alpha=1.0",
+    "reg=0.1"
+  ]
+}

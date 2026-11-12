@@ -1,0 +1,37 @@
+{
+  "method": "lsh",
+  "split": "user_time_10pct",
+  "stage": "val",
+  "tag": "chosen",
+  "params": {
+    "n_hashes": 256,
+    "bands": 128,
+    "similarity": "cosine",
+    "n_neighbours": 100
+  },
+  "sample": 1.0,
+  "seconds_recommend": 152.6,
+  "seconds_evaluate": 19.59,
+  "k": 10,
+  "rec_rows": 136710,
+  "rec_users": 13671,
+  "recommended_items_already_rated": 0,
+  "evaluated_users": 12905,
+  "evaluated_users_without_list": 0,
+  "precision@10": 0.063317,
+  "recall@10": 0.129533,
+  "ndcg@10": 0.106837,
+  "catalog_items": 13616,
+  "coverage": 0.077335,
+  "env": {
+    "spark": "4.0.1",
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26300-SP0",
+    "machine": "AMD64",
+    "cpu_count": 4,
+    "cores": "*",
+    "driver_memory": "8g"
+  },
+  "finished_utc": "2026-11-12 21:36:08",
+  "command": "C:\\Users\\GODFRED\\612.PY\\ensf612-movielens\\src\\run.py --method lsh --split user_time_10pct --stage val --n-boot 0 --tag chosen --param n_hashes=256 --param bands=128 --param similarity=cosine --param n_neighbours=100"
+}

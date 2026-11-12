@@ -1,0 +1,43 @@
+{
+  "method": "popularity",
+  "split": "global_time",
+  "stage": "test",
+  "tag": "",
+  "params": {},
+  "seconds_recommend": 35.53,
+  "seconds_evaluate": 53.65,
+  "k": 10,
+  "rec_rows": 1124660,
+  "rec_users": 112466,
+  "recommended_items_already_rated": 0,
+  "evaluated_users": 5542,
+  "evaluated_users_without_list": 0,
+  "precision@10": 0.126218,
+  "precision@10_ci95": [
+    0.121219,
+    0.131271
+  ],
+  "recall@10": 0.033733,
+  "recall@10_ci95": [
+    0.031762,
+    0.036207
+  ],
+  "ndcg@10": 0.143831,
+  "ndcg@10_ci95": [
+    0.138261,
+    0.149425
+  ],
+  "catalog_items": 12388,
+  "coverage": 0.026719,
+  "env": {
+    "spark": "4.0.1",
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26300-SP0",
+    "machine": "AMD64",
+    "cpu_count": 4,
+    "cores": "*",
+    "driver_memory": "8g"
+  },
+  "finished_utc": "2026-11-12 18:47:45",
+  "command": "C:\\Users\\GODFRED\\612.PY\\ensf612-movielens\\src\\run.py --method popularity --split global_time --stage test"
+}

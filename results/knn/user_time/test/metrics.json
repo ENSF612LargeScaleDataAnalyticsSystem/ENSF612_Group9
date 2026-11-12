@@ -1,0 +1,47 @@
+{
+  "method": "knn",
+  "split": "user_time",
+  "stage": "test",
+  "tag": "",
+  "params": {
+    "n_neighbours": 100,
+    "similarity": "cosine"
+  },
+  "sample": 1.0,
+  "seconds_recommend": 1634.5,
+  "seconds_evaluate": 78.98,
+  "k": 10,
+  "rec_rows": 1384930,
+  "rec_users": 138493,
+  "recommended_items_already_rated": 0,
+  "evaluated_users": 135599,
+  "evaluated_users_without_list": 0,
+  "precision@10": 0.103392,
+  "precision@10_ci95": [
+    0.102658,
+    0.104095
+  ],
+  "recall@10": 0.114003,
+  "recall@10_ci95": [
+    0.113068,
+    0.115072
+  ],
+  "ndcg@10": 0.13672,
+  "ndcg@10_ci95": [
+    0.135709,
+    0.137661
+  ],
+  "catalog_items": 22085,
+  "coverage": 0.08748,
+  "env": {
+    "spark": "4.0.1",
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26300-SP0",
+    "machine": "AMD64",
+    "cpu_count": 4,
+    "cores": "*",
+    "driver_memory": "8g"
+  },
+  "finished_utc": "2026-11-12 22:07:13",
+  "command": "C:\\Users\\GODFRED\\612.PY\\ensf612-movielens\\src\\run.py --method knn --split user_time --stage test --param n_neighbours=100 --param similarity=cosine"
+}

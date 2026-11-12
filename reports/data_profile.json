@@ -1,0 +1,47 @@
+{
+  "ratings": 20000263,
+  "users": 138493,
+  "movies_with_ratings": 26744,
+  "movies_in_movies_csv": 27278,
+  "density_pct": 0.54,
+  "likes": 9995410,
+  "like_share_pct": 49.98,
+  "first_rating_utc": "1995-01-09 11:46:44",
+  "last_rating_utc": "2015-03-31 06:40:02",
+  "ratings_per_user": {
+    "min": 20,
+    "mean": 144.41,
+    "max": 9254,
+    "p25": 35,
+    "p50": 68,
+    "p75": 155,
+    "p90": 334,
+    "p99": 1114
+  },
+  "likes_per_user": {
+    "min": 0,
+    "mean": 72.17,
+    "max": 3177,
+    "p25": 19,
+    "p50": 37,
+    "p75": 84,
+    "p90": 170,
+    "p99": 492
+  },
+  "ratings_per_movie": {
+    "min": 1,
+    "mean": 747.84,
+    "max": 67310,
+    "p25": 3,
+    "p50": 18,
+    "p75": 205,
+    "p90": 1306,
+    "p99": 14396
+  },
+  "users_with_fewer_than_20_ratings": 0,
+  "users_without_any_like": 206,
+  "movies_without_any_like": 6024,
+  "movies_with_1_rating": 3972,
+  "share_of_ratings_on_top_1pct_movies_pct": 33.48,
+  "ratings_sharing_a_timestamp_with_same_user_pct": 30.9
+}
