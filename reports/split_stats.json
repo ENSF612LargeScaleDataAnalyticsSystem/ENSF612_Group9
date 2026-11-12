@@ -1,0 +1,148 @@
+{
+  "user_time": {
+    "train": {
+      "ratings": 13883097,
+      "users": 138493,
+      "items": 20656,
+      "likes": 7087069,
+      "share_pct": 69.41
+    },
+    "val": {
+      "ratings": 2062715,
+      "users": 138493,
+      "items": 18513,
+      "likes": 983364,
+      "share_pct": 10.31
+    },
+    "test": {
+      "ratings": 4054451,
+      "users": 138493,
+      "items": 25139,
+      "likes": 1924977,
+      "share_pct": 20.27
+    },
+    "val_stage": {
+      "evaluable_users": 130411,
+      "target_users_without_training_history": 0,
+      "target_likes_on_items_unseen_in_training": 453,
+      "target_likes": 983364
+    },
+    "test_stage": {
+      "evaluable_users": 135599,
+      "target_users_without_training_history": 0,
+      "target_likes_on_items_unseen_in_training": 1782,
+      "target_likes": 1924977
+    }
+  },
+  "user_time_10pct": {
+    "train": {
+      "ratings": 1382688,
+      "users": 13671,
+      "items": 13616,
+      "likes": 705219,
+      "share_pct": 69.42
+    },
+    "val": {
+      "ratings": 205444,
+      "users": 13671,
+      "items": 10924,
+      "likes": 97529,
+      "share_pct": 10.31
+    },
+    "test": {
+      "ratings": 403760,
+      "users": 13671,
+      "items": 14654,
+      "likes": 190945,
+      "share_pct": 20.27
+    },
+    "val_stage": {
+      "evaluable_users": 12905,
+      "target_users_without_training_history": 0,
+      "target_likes_on_items_unseen_in_training": 284,
+      "target_likes": 97529
+    },
+    "test_stage": {
+      "evaluable_users": 13385,
+      "target_users_without_training_history": 0,
+      "target_likes_on_items_unseen_in_training": 985,
+      "target_likes": 190945
+    }
+  },
+  "global_time": {
+    "train": {
+      "ratings": 14000184,
+      "users": 100793,
+      "items": 9696,
+      "likes": 7047751,
+      "share_pct": 70.0
+    },
+    "val": {
+      "ratings": 2000026,
+      "users": 16322,
+      "items": 12126,
+      "likes": 949046,
+      "share_pct": 10.0
+    },
+    "test": {
+      "ratings": 4000053,
+      "users": 31670,
+      "items": 26349,
+      "likes": 1998613,
+      "share_pct": 20.0
+    },
+    "val_stage": {
+      "evaluable_users": 4538,
+      "target_users_without_training_history": 11673,
+      "target_likes_on_items_unseen_in_training": 93714,
+      "target_likes": 949046
+    },
+    "test_stage": {
+      "evaluable_users": 5542,
+      "target_users_without_training_history": 26027,
+      "target_likes_on_items_unseen_in_training": 300783,
+      "target_likes": 1998613
+    },
+    "cutoffs": {
+      "val_from_ts": 1197076838,
+      "test_from_ts": 1256024023,
+      "val_from_utc": "2007-12-08 01:20:38",
+      "test_from_utc": "2009-10-20 07:33:43"
+    }
+  },
+  "global_time_10pct": {
+    "train": {
+      "ratings": 1400308,
+      "users": 9936,
+      "items": 9127,
+      "likes": 704545,
+      "share_pct": 70.3
+    },
+    "val": {
+      "ratings": 193560,
+      "users": 1605,
+      "items": 8229,
+      "likes": 93261,
+      "share_pct": 9.72
+    },
+    "test": {
+      "ratings": 398024,
+      "users": 3168,
+      "items": 14557,
+      "likes": 195887,
+      "share_pct": 19.98
+    },
+    "val_stage": {
+      "evaluable_users": 447,
+      "target_users_without_training_history": 1146,
+      "target_likes_on_items_unseen_in_training": 9525,
+      "target_likes": 93261
+    },
+    "test_stage": {
+      "evaluable_users": 568,
+      "target_users_without_training_history": 2589,
+      "target_likes_on_items_unseen_in_training": 31287,
+      "target_likes": 195887
+    }
+  }
+}

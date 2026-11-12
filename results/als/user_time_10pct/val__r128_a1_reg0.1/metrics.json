@@ -1,0 +1,36 @@
+{
+  "method": "als",
+  "split": "user_time_10pct",
+  "stage": "val",
+  "tag": "r128_a1_reg0.1",
+  "params": {
+    "rank": 128,
+    "alpha": 1.0,
+    "reg": 0.1
+  },
+  "sample": 1.0,
+  "seconds_recommend": 383.89,
+  "seconds_evaluate": 35.79,
+  "k": 10,
+  "rec_rows": 136710,
+  "rec_users": 13671,
+  "recommended_items_already_rated": 0,
+  "evaluated_users": 12905,
+  "evaluated_users_without_list": 0,
+  "precision@10": 0.068772,
+  "recall@10": 0.141195,
+  "ndcg@10": 0.117001,
+  "catalog_items": 13616,
+  "coverage": 0.109504,
+  "env": {
+    "spark": "4.0.1",
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26300-SP0",
+    "machine": "AMD64",
+    "cpu_count": 4,
+    "cores": "*",
+    "driver_memory": "8g"
+  },
+  "finished_utc": "2026-11-12 21:25:34",
+  "command": "C:\\Users\\GODFRED\\612.PY\\ensf612-movielens\\src\\run.py --method als --split user_time_10pct --stage val --n-boot 0 --tag r128_a1_reg0.1 --param rank=128 --param alpha=1.0 --param reg=0.1"
+}

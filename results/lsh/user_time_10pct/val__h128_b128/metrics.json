@@ -1,0 +1,35 @@
+{
+  "method": "lsh",
+  "split": "user_time_10pct",
+  "stage": "val",
+  "tag": "h128_b128",
+  "params": {
+    "n_hashes": 128,
+    "bands": 128
+  },
+  "sample": 1.0,
+  "seconds_recommend": 309.1,
+  "seconds_evaluate": 18.34,
+  "k": 10,
+  "rec_rows": 136710,
+  "rec_users": 13671,
+  "recommended_items_already_rated": 0,
+  "evaluated_users": 12905,
+  "evaluated_users_without_list": 0,
+  "precision@10": 0.062363,
+  "recall@10": 0.127555,
+  "ndcg@10": 0.10571,
+  "catalog_items": 13616,
+  "coverage": 0.079979,
+  "env": {
+    "spark": "4.0.1",
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26300-SP0",
+    "machine": "AMD64",
+    "cpu_count": 4,
+    "cores": "*",
+    "driver_memory": "8g"
+  },
+  "finished_utc": "2026-11-12 20:05:25",
+  "command": "C:\\Users\\GODFRED\\612.PY\\ensf612-movielens\\src\\run.py --method lsh --split user_time_10pct --stage val --n-boot 0 --tag h128_b128 --param n_hashes=128 --param bands=128"
+}
