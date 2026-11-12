@@ -150,5 +150,5 @@ paired ALS − kNN differences on `user_time` with their 95% intervals.
   give that link to the member and ask them to open it in a browser and press **Create pull request**
   (into `main`). Do not merge it; the integrator merges.
 
-- [ ] **15. Done.** Tell the member, in a short message: the test numbers for both splits, where the
+- [x] **15. Done.** Tell the member, in a short message: the test numbers for both splits, where the
   report section is, the pull-request link, and anything that went wrong on the way.
