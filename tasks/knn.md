@@ -24,7 +24,7 @@ Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logn
 
 ## Part A: publish the foundation (once)
 
-- [ ] **A1. Create the local repository.**
+- [x] **A1. Create the local repository.**
   ```
   git init -b main
   git add -A
@@ -38,7 +38,7 @@ Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logn
 
 - [ ] **A2. Push to GitHub.** **STOP** and get the member's go-ahead (rule 5). Then:
   ```
-  git remote add origin https://github.com/ENSF612LargeScaleDataAnalyticsSystem/ENSF612_Group9.git
+  git remote get-url origin   # already set to the group repository
   git push -u origin main
   ```
   If GitHub asks for a login, the member signs in in the browser window that opens. If the push is
