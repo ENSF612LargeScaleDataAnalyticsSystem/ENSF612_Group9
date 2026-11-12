@@ -36,7 +36,7 @@ Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logn
   git commit -m "Shared foundation: pipeline, five methods, validation tuning, group workflow"
   ```
 
-- [ ] **A2. Push to GitHub.** **STOP** and get the member's go-ahead (rule 5). Then:
+- [x] **A2. Push to GitHub.** **STOP** and get the member's go-ahead (rule 5). Then:
   ```
   git remote get-url origin   # already set to the group repository
   git push -u origin main
