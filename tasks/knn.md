@@ -51,11 +51,11 @@ Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logn
 
 ## Part B: kNN test runs and report section
 
-- [ ] **B1. Branch.** `git checkout -b member/knn` (or `git checkout member/knn` if it exists).
+- [x] **B1. Branch.** `git checkout -b member/knn` (or `git checkout member/knn` if it exists).
 
-- [ ] **B2. Check.** `.\.venv\Scripts\python.exe tools\member.py check knn` → `ALL CHECKS PASSED`.
+- [x] **B2. Check.** `.\.venv\Scripts\python.exe tools\member.py check knn` → `ALL CHECKS PASSED`.
 
-- [ ] **B3. Test runs.** In the background:
+- [x] **B3. Test runs.** In the background:
   ```
   .\.venv\Scripts\python.exe tools\member.py test knn
   ```
@@ -66,13 +66,13 @@ Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logn
   with `--driver-memory 6g` (this machine has 16 GB; the Python workers need the rest). If it fails
   twice, **STOP**.
 
-- [ ] **B4. Compare with the baseline.**
+- [x] **B4. Compare with the baseline.**
   ```
   .\tools\run.ps1 compare_knn_pop_user_time   tools\compare.py results\knn\user_time\test   results\popularity\user_time\test
   .\tools\run.ps1 compare_knn_pop_global_time tools\compare.py results\knn\global_time\test results\popularity\global_time\test
   ```
 
-- [ ] **B5. Write `report/knn.md`.** About one page, plain sentences:
+- [x] **B5. Write `report/knn.md`.** About one page, plain sentences:
   1. **Method**: what exact user-kNN does and how it is implemented (read `src/methods/knn.py` and `_shared.py`).
   2. **Parameters and tuning**: table of every `results/knn/user_time_10pct/val__*/metrics.json`, sorted by
      NDCG@10, chosen configuration marked (cosine, 100 neighbours); tuning used only the validation stage of the pilot.
