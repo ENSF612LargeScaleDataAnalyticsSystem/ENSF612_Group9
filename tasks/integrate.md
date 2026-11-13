@@ -29,28 +29,28 @@ un.ps1 <logname> <python args>`.
   `origin/member/knn`, `origin/member/lsh`, `origin/member/ppr`, `origin/member/als`, `origin/member/scale`. If one is missing,
   **STOP** and note who is still outstanding.
 
-- [ ] **2. Merge.** On `main`, for each of the five: `git merge --no-ff origin/member/<name>`.
+- [x] **2. Merge.** On `main`, for each of the five: `git merge --no-ff origin/member/<name>`.
   Members only touch their own files. The one expected conflict is in a member's own `tasks/<name>.md`
   (its wording changed on `main` after some members had started): keep the member's version
   (`git checkout --theirs tasks/<name>.md`, `git add` it, `git commit`). For any other conflict, or if a
   branch changes anything outside its own files (`git diff --stat main...origin/member/<name>`), **STOP**.
 
-- [ ] **3. Verify.** `python tools/verify_results.py` → `ALL RESULTS COMPARABLE`
+- [x] **3. Verify.** `python tools/verify_results.py` → `ALL RESULTS COMPARABLE`
   (chosen parameters, full test stage, same evaluated users as the baseline on both splits). A `FAIL`
   goes back to that member; do not patch their numbers.
 
-- [ ] **4. Tables.**
+- [x] **4. Tables.**
   ```
   python tools/rebuild_summary.py
   python tools/summarize.py
   ```
   `reports/results.md` now has tuning, test results with intervals, and scalability.
 
-- [ ] **5. Paired comparisons** on both splits, with `python tools/compare.py <run folder A> <run folder B>`: LSH − kNN,
+- [x] **5. Paired comparisons** on both splits, with `python tools/compare.py <run folder A> <run folder B>`: LSH − kNN,
   ALS − kNN, PPR − kNN, and the best method against each other one. Write the differences and 95% intervals
   into `report/comparisons.md`, one table per split.
 
-- [ ] **6. Scalability section.** Write `tools/plots.py` (matplotlib; add it to `requirements.txt`) that
+- [x] **6. Scalability section.** Write `tools/plots.py` (matplotlib; add it to `requirements.txt`) that
   reads the `val__scale_*` `metrics.json` files and saves two figures to `report/figures/`: recommend time
   against user sample (4 cores) and against cores (25% sample), one line per method. Write
   `report/scalability.md` around them: the two tables from `reports/results.md`, speed-up 1→4 cores,
@@ -59,14 +59,14 @@ un.ps1 <logname> <python args>`.
   files); the "recommend seconds" in the test-result tables come from each member's own machine and must
   not be compared across methods.
 
-- [ ] **7. Assemble `report/report.md`** from the sections, in this order: `data.md`, `evaluation.md`,
+- [x] **7. Assemble `report/report.md`** from the sections, in this order: `data.md`, `evaluation.md`,
   `knn.md`, `lsh.md`, `ppr.md`, `als.md`, `comparisons.md`, `scalability.md`, then a short conclusion that
   answers each research question in the proposal with the numbers. Make wording and table formats
   consistent; do not change any number.
 
-- [ ] **8. Update the trackers.** Tick the finished items in `CHECKLIST.md` and replace the "Status"
+- [x] **8. Update the trackers.** Tick the finished items in `CHECKLIST.md` and replace the "Status"
   section of `README.md` with the real state.
 
-- [ ] **9. Push `main`.** Commit, review (rule 4), then `git push origin main`.
+- [x] **9. Push `main`.** Commit, review (rule 4), then `git push origin main`.
 
-- [ ] **10. Done.** Share with the group: the final results table, where the report is, and anything unresolved.
+- [x] **10. Done.** Share with the group: the final results table, where the report is, and anything unresolved.

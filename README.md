@@ -164,7 +164,20 @@ python tools/scale.py                    # the 30 scalability runs (one member, 
 
 ## Status
 
-Run on the real ml-20m files: ingest (20,000,263 ratings, 0 rows dropped), both splits, the popularity
-baseline on both test splits, and validation tuning of kNN, LSH, PPR and ALS on the 10% pilot
-(`reports/results.md`). Final test runs: kNN `user_time` is done; the rest are in the members' task files.
-`CHECKLIST.md` has the details.
+Finished. On the real ml-20m files: ingest (20,000,263 ratings, 0 rows dropped), both splits, validation
+tuning of kNN, LSH, PPR and ALS on the 10% pilot, the final test runs of all five methods on `user_time` and
+`global_time` (`tools/verify_results.py`: all results comparable), paired comparisons, and the 30
+scalability runs on one machine.
+
+Final test NDCG@10 (95% intervals in `reports/results.md`):
+
+| Method | user_time | global_time |
+|---|---|---|
+| ALS | 0.1474 | 0.2221 |
+| exact kNN | 0.1367 | 0.2130 |
+| MinHash-LSH | 0.1366 | 0.2125 |
+| Monte Carlo PPR | 0.0985 | 0.1589 |
+| popularity | 0.0806 | 0.1438 |
+
+The report is `report/report.md` (sections in `report/`, figures in `report/figures/`). Tables:
+`reports/results.md`. Not measured: shuffle bytes and peak memory per run. `CHECKLIST.md` has the details.

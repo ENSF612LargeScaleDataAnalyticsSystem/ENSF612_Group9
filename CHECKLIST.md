@@ -12,12 +12,12 @@ sets JAVA_HOME/HADOOP_HOME and writes `logs\<log>.log`.
 - [x] `data/raw/ml-20m/` downloaded
 - [x] `python -m src.ingest` (342 s): 20,000,263 ratings, 138,493 users, 26,744 movies, 0 rows dropped
 - [x] `reports/data_profile.md` matches the official ml-20m counts
-- [ ] Copy the data profile and cleaning rules (README §5) into the report
+- [x] Copy the data profile and cleaning rules (README §5) into the report (`report/data.md`)
 
 ## 3. Splits
 - [x] `python -m src.split` (418 s): `user_time`, `global_time`, `user_time_10pct`, `global_time_10pct`
 - [x] `reports/split_stats.md` generated
-- [ ] Note for the report: at the test stage `global_time` evaluates only 5,542 users (26,027 test users have
+- [x] Note for the report (`report/data.md` §5): at the test stage `global_time` evaluates only 5,542 users (26,027 test users have
       no training history), and 15% of its test likes are on movies unseen in training.
 
 ## 4. Popularity baseline
@@ -31,10 +31,10 @@ and once on `global_time`, with the chosen params.
 
 | Method | File | Implemented + tested | Pilot run | Tuned (val) | user_time test | global_time test |
 |---|---|---|---|---|---|---|
-| Exact user-kNN | `knn.py` | [x] | [x] | [x] cosine, 100 neighbours (val NDCG 0.1081) | [x] NDCG 0.1367 | [ ] crashed once before scoring; rerun |
-| MinHash-LSH | `lsh.py` | [x] | [x] | [x] 256 hashes, 128 bands, cosine, 100 neighbours (0.1068) | [ ] | [ ] |
-| Monte Carlo PPR | `ppr.py` | [x] | [x] | [x] alpha 0.3, 2500 walkers, beta 0.3, min_visits 10 (0.0800) | [ ] | [ ] |
-| ALS (MLlib) | `als.py` | [x] | [x] | [x] rank 128, alpha 1, reg 0.1 (0.1170) | [ ] | [ ] |
+| Exact user-kNN | `knn.py` | [x] | [x] | [x] cosine, 100 neighbours (val NDCG 0.1081) | [x] NDCG 0.1367 | [x] NDCG 0.2130 |
+| MinHash-LSH | `lsh.py` | [x] | [x] | [x] 256 hashes, 128 bands, cosine, 100 neighbours (0.1068) | [x] NDCG 0.1366 | [x] NDCG 0.2125 |
+| Monte Carlo PPR | `ppr.py` | [x] | [x] | [x] alpha 0.3, 2500 walkers, beta 0.3, min_visits 10 (0.0800) | [x] NDCG 0.0985 | [x] NDCG 0.1589 |
+| ALS (MLlib) | `als.py` | [x] | [x] | [x] rank 128, alpha 1, reg 0.1 (0.1170) | [x] NDCG 0.1474 | [x] NDCG 0.2221 |
 
 Tuning is finished; the chosen parameters are in `tools/chosen.json`. The remaining test runs, the
 scalability runs and the report are split between the four members: see `tasks/README.md`. Each member
@@ -81,12 +81,12 @@ LSH neighbour quality: `python tools/lsh_recall.py --n-hashes 128 --bands 64`.
 ## 6. Scalability (RQ3)
 - [x] Results do not depend on the core count (fixed user batches, ties broken by id, seeded per batch, fixed ALS blocks)
 - [x] `src.run --sample 0.25` option (uses `common.user_sample` on train and target; adds `s25` to the tag)
-- [ ] 10 / 25 / 50 / 100% user samples for each method
-- [ ] `--cores 1`, `2`, `4` with the same `--driver-memory` for each method
-- [ ] LSH vs exact kNN: neighbour recall and time, against (`n_hashes`, `bands`)
+- [x] 10 / 25 / 50 / 100% user samples for each method (`report/scalability.md`)
+- [x] `--cores 1`, `2`, `4` with the same `--driver-memory` for each method (14g, one machine)
+- [x] LSH vs exact kNN: neighbour recall and time (`report/lsh.md`, `report/scalability.md` §4)
 - [ ] Not built yet: shuffle bytes and peak memory per run (Spark REST API `/api/v1/applications/<id>/stages`, `/executors`)
 
 ## 7. Report
-- [ ] Results tables from `results/summary.csv` with 95% bootstrap CIs
-- [ ] Paired bootstrap comparisons: `python tools/compare.py results/<A>/user_time/test results/<B>/user_time/test`
-- [ ] Scalability plots
+- [x] Results tables from `results/summary.csv` with 95% bootstrap CIs (`reports/results.md`)
+- [x] Paired bootstrap comparisons (`report/comparisons.md`): `python tools/compare.py results/<A>/user_time/test results/<B>/user_time/test`
+- [x] Scalability plots (`report/figures/`, `tools/plots.py`)
