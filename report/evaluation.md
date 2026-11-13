@@ -58,17 +58,21 @@ interval for a difference is narrower than two separate intervals would suggest.
 
 - A method receives only the training DataFrame. The method contract forbids reading the
   validation or test files, and `src/run.py` passes nothing else.
-- The splits are ordered in time. In `user_time`, each user's last 20% of ratings are test and the
-  10% before them are validation. In `global_time`, two global timestamp cutoffs separate the parts.
-  A method never trains on ratings that come after the ones it is scored on.
+- The splits are ordered in time. In `global_time`, two global timestamp cutoffs separate the parts,
+  so a method never trains on a rating made after any rating it is scored on. In `user_time`, each
+  user's last 20% of ratings are test and the 10% before them are validation. No user's own later
+  ratings reach training, but the cutoff differs per user, so training can hold other users'
+  ratings made after this user's test ratings. Only `global_time` gives a strict time order across
+  users.
 - Methods never recommend an item the user already rated in training.
 - Tuning used only the validation stage of the 10% pilot. Parameters were fixed in
   `tools/chosen.json` before any test run, and each test split runs only once.
-- Each member ran the test stage on their own machine. Before that, `tools/member.py check` confirmed
-  that the machine's data profile and split statistics were identical to the group's copies, so
-  every member scored on the same rows. `tools/member.py pilot` then re-ran the chosen parameters on
-  the pilot's validation stage and had to reproduce the group's metrics (within 0.002 per metric,
-  with the same evaluated users).
+- The popularity and kNN test runs were made on the group's reference machine. Every other member
+  runs the test stage on their own machine, and only after two checks. `tools/member.py check`
+  confirms that the machine's data profile and split statistics are identical to the group's
+  copies, so every machine scores on the same rows. `tools/member.py pilot` then re-runs the chosen
+  parameters on the pilot's validation stage and must reproduce the group's metrics (within 0.002
+  per metric, with the same evaluated users).
 
 ## 6. Reproducibility
 
