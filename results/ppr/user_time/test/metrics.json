@@ -1,0 +1,49 @@
+{
+  "method": "ppr",
+  "split": "user_time",
+  "stage": "test",
+  "tag": "",
+  "params": {
+    "alpha": 0.3,
+    "n_walkers": 2500,
+    "beta": 0.3,
+    "min_visits": 10
+  },
+  "sample": 1.0,
+  "seconds_recommend": 115.61,
+  "seconds_evaluate": 13.83,
+  "k": 10,
+  "rec_rows": 1384930,
+  "rec_users": 138493,
+  "recommended_items_already_rated": 0,
+  "evaluated_users": 135599,
+  "evaluated_users_without_list": 0,
+  "precision@10": 0.074903,
+  "precision@10_ci95": [
+    0.074253,
+    0.075525
+  ],
+  "recall@10": 0.082095,
+  "recall@10_ci95": [
+    0.081241,
+    0.082917
+  ],
+  "ndcg@10": 0.098499,
+  "ndcg@10_ci95": [
+    0.097628,
+    0.099313
+  ],
+  "catalog_items": 22085,
+  "coverage": 0.060222,
+  "env": {
+    "spark": "4.0.1",
+    "python": "3.11.18",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpu_count": 10,
+    "cores": "*",
+    "driver_memory": "14g"
+  },
+  "finished_utc": "2026-11-13 00:55:01",
+  "command": "/Users/vineeth/Downloads/ensf612-movielens/ENSF612_Group9_ppr/src/run.py --method ppr --split user_time --stage test --param alpha=0.3 --param n_walkers=2500 --param beta=0.3 --param min_visits=10 --driver-memory 14g"
+}
