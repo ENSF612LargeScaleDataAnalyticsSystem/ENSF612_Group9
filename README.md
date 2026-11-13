@@ -159,6 +159,7 @@ python tools/member.py check <method>    # machine ready, data and splits identi
 python tools/member.py pilot <method>    # reproduces the group's validation numbers on the 10% pilot
 python tools/member.py test  <method>    # final test runs, once per split, chosen parameters only
 python tools/member.py push  <method>    # commits the member's own files, pushes branch member/<method>
+python tools/scale.py                    # the 30 scalability runs (one member, one machine; tasks/scale.md)
 ```
 
 ## Status

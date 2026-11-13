@@ -1,8 +1,7 @@
 # Task: exact user-kNN (`knn`) and integration
 
 These are the steps for the group member who owns **knn** and who is also the **integrator**: the only
-person who pushes to `main`. The integrator's machine is the group's reference machine (tuning was done
-there, and all scalability timings are made there so that they are comparable).
+person who pushes to `main`. Tuning was done on the integrator's machine.
 
 Do the steps in order. After a step is done **and verified**, change its `- [ ]` to `- [x]` in this file
 and go on, so the work can always be picked up again at the first unticked step. Do not stop between
@@ -83,27 +82,18 @@ Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logn
 
 - [ ] **B6. Push the branch.** `.\.venv\Scripts\python.exe tools\member.py push knn`
 
-## Part C: scalability runs (RQ3), all methods, this machine only
+## Part C: scalability runs (RQ3)
 
-- [ ] **C1. Run.** `git checkout main`, then in the background (several hours; do not use the machine for
-  other heavy work, the timings are the result):
-  ```
-  .\tools\scale.ps1 *> logs\scale_all.log
-  ```
-  It runs every method on 10 / 25 / 50 / 100% of users with 4 cores, and on the 25% sample with 1 and 2
-  cores, always on the **validation** stage. Each line of `logs\scale_all.log` must say `exit 0`; re-run
-  only the failed method (`.\tools\scale.ps1 <method>`).
-
-- [ ] **C2. Commit** the new `results/*/user_time/val__scale_*` folders on `main`
-  (`git add results`, `git commit -m "Scalability runs (RQ3), reference machine"`). Do not push yet.
+The 30 timing runs are made by one member on one machine, following `tasks/scale.md`, and arrive as the
+branch `member/scale`. Nothing to run here.
 
 ## Part D: integration (when all four branches are on GitHub)
 
 - [ ] **D1. Are all branches there?** `git fetch origin` then `git branch -r`. Needed:
-  `origin/member/knn`, `origin/member/lsh`, `origin/member/ppr`, `origin/member/als`. If one is missing,
-  **STOP** and note who is still outstanding. Parts B and C do not depend on this.
+  `origin/member/knn`, `origin/member/lsh`, `origin/member/ppr`, `origin/member/als`, `origin/member/scale`. If one is missing,
+  **STOP** and note who is still outstanding. Part B does not depend on this.
 
-- [ ] **D2. Merge.** On `main`, for each of the four: `git merge --no-ff origin/member/<method>`.
+- [ ] **D2. Merge.** On `main`, for each of the five: `git merge --no-ff origin/member/<name>`.
   Members only touch their own files, so there should be no conflicts. If there is one, or a branch
   changes anything outside its own files (`git diff --stat main...origin/member/<method>`), **STOP**.
 
@@ -127,8 +117,9 @@ Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logn
   against user sample (4 cores) and against cores (25% sample), one line per method. Write
   `report/scalability.md` around them: the two tables from `reports/results.md`, speed-up 1→4 cores,
   and the LSH against exact kNN time and neighbour-recall trade-off (recall numbers are in `report/lsh.md`).
-  State clearly: all scalability timings come from this one machine; the "recommend seconds" in the
-  test-result tables come from each member's own machine and must not be compared across methods.
+  State clearly: all scalability timings come from one machine (name it, from `env` in the `metrics.json`
+  files); the "recommend seconds" in the test-result tables come from each member's own machine and must
+  not be compared across methods.
 
 - [ ] **D7. Assemble `report/report.md`** from the sections, in this order: `data.md`, `evaluation.md`,
   `knn.md`, `lsh.md`, `ppr.md`, `als.md`, `comparisons.md`, `scalability.md`, then a short conclusion that

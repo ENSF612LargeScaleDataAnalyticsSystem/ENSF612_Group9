@@ -6,10 +6,11 @@ Each member does their part on their own machine and branch, and pushes it to Gi
 
 | Task file | Method | Also writes | Branch |
 |---|---|---|---|
-| `tasks/knn.md` | exact user-kNN | integration, scalability, final report (integrator) | `member/knn`, `main` |
+| `tasks/knn.md` | exact user-kNN | integration and final report (integrator) | `member/knn`, `main` |
 | `tasks/lsh.md` | MinHash-LSH | LSH against exact kNN | `member/lsh` |
 | `tasks/ppr.md` | Monte Carlo PPR | report section on data and splits | `member/ppr` |
 | `tasks/als.md` | ALS | report section on the evaluation protocol | `member/als` |
+| `tasks/scale.md` | all five (timing only) | the 30 scalability runs, by one member on one machine | `member/scale` |
 
 ## What each member does
 
@@ -40,4 +41,4 @@ with `--driver-memory 5g`).
 - **Checked again at the end.** `tools/verify_results.py` confirms that every method used the chosen
   parameters and evaluated exactly the same users as the baseline.
 - **Timings.** Run times from different laptops are not comparable, so all scalability runs are made on
-  one machine by the integrator.
+  one machine by one member (`tasks/scale.md`).

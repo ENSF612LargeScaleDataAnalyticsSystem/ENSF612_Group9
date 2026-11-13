@@ -25,8 +25,8 @@ unticked step and carry on from there, ticking steps as they are verified. Rules
 - `results/summary.csv` and `logs/` are not in git. `python tools/rebuild_summary.py` rebuilds the summary from
   the `metrics.json` files (run it before `tools/summarize.py`); `python tools/verify_results.py` checks that all
   test results are comparable (chosen params, same evaluated users as the baseline).
-- Timings from different laptops are not comparable: scalability runs (`tools\scale.ps1`) are made on the
-  integrator's machine only.
+- Timings from different laptops are not comparable: all scalability runs (`python tools/scale.py`, steps in
+  `tasks/scale.md`) are made by one member on one machine and pushed as branch `member/scale`.
 
 ## Commands
 

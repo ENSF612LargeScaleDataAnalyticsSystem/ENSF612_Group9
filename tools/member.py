@@ -6,7 +6,8 @@
     python tools/member.py test lsh       # the final test runs: user_time and global_time, once each
     python tools/member.py push lsh       # commit this member's files and push branch member/lsh
 
-Methods: knn, lsh, ppr, als. Works on Windows, macOS and Linux; run it with the project's venv Python
+Methods: knn, lsh, ppr, als. The scalability runs (tools/scale.py) are a fifth piece of work with its own
+branch: `check scale` and `push scale` work the same way; pilot and test do not apply to it. Works on Windows, macOS and Linux; run it with the project's venv Python
 from the project root. Parameters always come from tools/chosen.json (picked on validation), never
 from the command line, so nobody can tune on the test part by accident.
 """
@@ -33,6 +34,14 @@ OWN = {
     "ppr": ["results/ppr", "report/ppr.md", "report/data.md", "tasks/ppr.md"],
     "als": ["results/als", "report/als.md", "report/evaluation.md", "tasks/als.md"],
 }
+SCALE = "scale"                  # the scalability runs: timing folders of all five methods
+
+
+def own_paths(method):
+    if method != SCALE:
+        return OWN[method]
+    runs = sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / "results").glob("*/user_time/val__scale_*"))
+    return [*runs, "tasks/scale.md"]
 # A change here means the member's numbers were not produced by the group's code.
 FROZEN = ("src/", "tests/", "tools/", "requirements.txt")
 
@@ -263,7 +272,7 @@ def cmd_push(method, args):
     b = branch()
     if b != f"member/{method}":
         sys.exit(f"You are on branch {b}; switch to member/{method} first.")
-    own = OWN[method]
+    own = own_paths(method)
     mine = lambda p: any(p == o or p.startswith(o + "/") for o in own)
     others = [p for _, p in changed_files() if not mine(p)]
     frozen = [p for p in others if p.startswith(FROZEN)]
@@ -276,7 +285,10 @@ def cmd_push(method, args):
         return 1
 
     print("Deliverables:")
-    for split in TEST_SPLITS:
+    if method == SCALE:
+        done = sum((ROOT / o / "metrics.json").exists() for o in own if o.startswith("results/"))
+        print(f"  [{'x' if done == 30 else ' '}] scalability runs with a result: {done} of 30")
+    for split in (TEST_SPLITS if method != SCALE else ()):
         ok = (run_folder(method, split, "test") / "metrics.json").exists()
         print(f"  [{'x' if ok else ' '}] results/{method}/{split}/test/metrics.json")
     for rel in [o for o in own if o.endswith(".md") and o.startswith("report/")]:
@@ -285,7 +297,8 @@ def cmd_push(method, args):
     existing = [o for o in own if (ROOT / o).exists()]
     git("add", "--", *existing)
     if git("diff", "--cached", "--quiet", check=False).returncode != 0:
-        git("commit", "-m", args.message or f"{method}: test results and report section")
+        default = "Scalability runs (RQ3)" if method == SCALE else f"{method}: test results and report section"
+        git("commit", "-m", args.message or default)
         print("committed: " + git("log", "-1", "--oneline").stdout.strip())
     else:
         print("nothing new to commit")
@@ -308,10 +321,12 @@ def cmd_push(method, args):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("command", choices=["check", "pilot", "test", "push"])
-    ap.add_argument("method", choices=METHODS)
+    ap.add_argument("method", choices=[*METHODS, SCALE])
     ap.add_argument("--driver-memory", help="Spark heap for pilot/test, e.g. 5g on an 8 GB laptop (default 8g)")
     ap.add_argument("-m", "--message", help="commit message for push")
     args = ap.parse_args()
+    if args.method == SCALE and args.command in ("pilot", "test"):
+        ap.error("scale has no pilot or test step; run: python tools/scale.py")
     sys.exit({"check": cmd_check, "pilot": cmd_pilot, "test": cmd_test, "push": cmd_push}[args.command](args.method, args))
 
 
