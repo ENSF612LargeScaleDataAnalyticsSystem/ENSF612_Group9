@@ -84,7 +84,7 @@ against 0.0129 on `user_time`).
   alpha 40. Alpha 0.3 and 1 are practically tied (difference 0.0001); alpha 1 was kept for the larger
   rank. Using the raw ratings as confidence instead of likes was much worse (0.0659), although it
   gave the highest coverage (0.2062).
-- **Rank and reg helped only slightly, and only together.** With alpha 10, rank 32, 64 and 128 gave
+- **Rank and reg helped only slightly.** With alpha 10, rank 32, 64 and 128 gave
   0.1008, 0.1019 and 0.1030. With alpha 1, going from rank 64 to 128 alone lowered NDCG@10 (0.1127 →
   0.1095). Raising reg from 0.05 to 0.1 at rank 128 then gave the best result, 0.1170. Without a
   rank-64, alpha-1, reg-0.1 run we cannot separate the effect of rank from that of reg. 15 iterations
@@ -105,7 +105,7 @@ against 0.0129 on `user_time`).
 - **Memory and the driver.** Both factor matrices are collected to the driver and broadcast to every
   worker, and each batch builds a dense 256 × (number of movies) score matrix. This fits MovieLens
   20M on one machine but would not scale to a much larger catalogue without approximate scoring.
-- **Run time.** Training cost grows with the rank. On the pilot, rank 64 took 116.22 s and rank 128
+- **Run time.** Recommend time (training plus scoring) grows with the rank. On the pilot, rank 64 took 116.22 s and rank 128
   took 282.36 s, and the chosen configuration took 383.89 s.
 - **What `global_time` can evaluate.** Only users who rated before the cutoff and liked a movie after
   it are evaluated (5,542 users, against 135,599 on `user_time`), so its intervals are much wider.
