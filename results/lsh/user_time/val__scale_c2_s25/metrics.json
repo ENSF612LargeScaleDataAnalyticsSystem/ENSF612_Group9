@@ -1,0 +1,37 @@
+{
+  "method": "lsh",
+  "split": "user_time",
+  "stage": "val",
+  "tag": "scale_c2_s25",
+  "params": {
+    "n_hashes": 256,
+    "bands": 128,
+    "similarity": "cosine",
+    "n_neighbours": 100
+  },
+  "sample": 0.25,
+  "seconds_recommend": 78.18,
+  "seconds_evaluate": 6.1,
+  "k": 10,
+  "rec_rows": 343260,
+  "rec_users": 34326,
+  "recommended_items_already_rated": 0,
+  "evaluated_users": 32278,
+  "evaluated_users_without_list": 0,
+  "precision@10": 0.064326,
+  "recall@10": 0.132517,
+  "ndcg@10": 0.108492,
+  "catalog_items": 16672,
+  "coverage": 0.078095,
+  "env": {
+    "spark": "4.0.1",
+    "python": "3.11.18",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpu_count": 10,
+    "cores": "2",
+    "driver_memory": "14g"
+  },
+  "finished_utc": "2026-11-13 01:37:04",
+  "command": "/Users/vineeth/Downloads/ensf612-movielens/ENSF612_Group9/src/run.py --method lsh --split user_time --stage val --n-boot 0 --cores 2 --driver-memory 14g --sample 0.25 --tag scale_c2 --param n_hashes=256 --param bands=128 --param similarity=cosine --param n_neighbours=100"
+}
