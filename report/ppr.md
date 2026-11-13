@@ -52,7 +52,33 @@ Sorted by NDCG@10. All runs were made on the group's tuning machine.
 
 The chosen configuration is fixed in `tools/chosen.json`.
 
-<!-- sections 3, 4 and 6 follow after the test runs -->
+## 3. Test results
+
+Train + validation → test, one run per split, with the chosen parameters.
+
+| Method | Split | P@10 [95% CI] | R@10 [95% CI] | NDCG@10 [95% CI] | Coverage | Evaluated users | Recommend (s) |
+|---|---|---|---|---|---|---|---|
+| PPR | user_time | 0.0749 [0.0743, 0.0755] | 0.0821 [0.0812, 0.0829] | 0.0985 [0.0976, 0.0993] | 0.0602 | 135,599 | 115.61 |
+| Popularity | user_time | 0.0619 [0.0613, 0.0624] | 0.0619 [0.0612, 0.0626] | 0.0806 [0.0798, 0.0814] | 0.0129 | 135,599 | 38.45 |
+| PPR | global_time | 0.1415 [0.1359, 0.1468] | 0.0370 [0.0349, 0.0395] | 0.1589 [0.1531, 0.1645] | 0.0606 | 5,542 | 87.19 |
+| Popularity | global_time | 0.1262 [0.1212, 0.1313] | 0.0337 [0.0318, 0.0362] | 0.1438 [0.1383, 0.1494] | 0.0267 | 5,542 | 35.53 |
+
+The PPR runs were made on macOS 27.0.1 (arm64), 10 CPUs, Spark 4.0.1, 14g driver memory, all cores.
+The popularity rows come from the group's runs on Windows 10 (AMD64), 4 CPUs, 8g driver memory.
+Run times from the two machines are not comparable.
+
+## 4. Comparison with the baseline
+
+Paired bootstrap (1,000 resamples of the same users), PPR − popularity:
+
+| Split | Users | ΔP@10 [95% CI] | ΔR@10 [95% CI] | ΔNDCG@10 [95% CI] |
+|---|---|---|---|---|
+| user_time | 135,599 | +0.0130 [+0.0127, +0.0133] | +0.0201 [+0.0196, +0.0207] | +0.0179 [+0.0174, +0.0183] |
+| global_time | 5,542 | +0.0153 [+0.0135, +0.0170] | +0.0033 [+0.0021, +0.0044] | +0.0151 [+0.0131, +0.0170] |
+
+PPR beats the popularity baseline on every metric on both splits. All intervals are above zero, and
+the share of resamples where PPR was not better is 0.000 in all six cases. The gain is modest: on
+`user_time`, NDCG@10 rises from 0.0806 to 0.0985. Coverage rises from 0.0129 to 0.0602 on `user_time`.
 
 ## 5. Findings from tuning
 
@@ -67,3 +93,17 @@ The chosen configuration is fixed in `tools/chosen.json`.
   0.0763 without the penalty, and coverage rose from 0.0142 to 0.0462.
 - **The restart probability `alpha` mattered little** at 100 walkers: 0.0581 (alpha 0.1), 0.0608 (0.3)
   and 0.0606 (0.5).
+
+## 6. Limitations
+
+- **Memory.** Each batch of 256 users keeps a dense count matrix with one value per user and movie,
+  and the whole training index is broadcast to every worker. This fits MovieLens 20M on one machine,
+  but memory grows with the number of movies.
+- **Run time grows with the walkers.** On the pilot (alpha 0.3, no penalty), 100 walkers took 65.12 s,
+  1000 took 98.21 s and 2500 took 158.4 s. The scores are a Monte Carlo estimate, so fewer walkers
+  means noisier scores, and NDCG@10 drops (see section 5).
+- **One random seed.** All runs use seed 612. Because the scores come from random walks, another seed could
+  give somewhat different numbers; we did not measure this.
+- **What `global_time` can evaluate.** Only users who rated before the cutoff and liked a movie after
+  it are evaluated (5,542 users, against 135,599 on `user_time`), so its intervals are much wider.
+  Parameters were tuned on the `user_time` pilot only and reused for `global_time`.
