@@ -16,7 +16,7 @@ unticked step and carry on from there, ticking steps as they are verified. Rules
 
 - **Shared code is frozen**: `src/`, `tests/`, `tools/`, `requirements.txt`. A member commits only the files
   listed for them in `tools/member.py` (`OWN`): `results/<method>/`, `report/<method>.md`, `tasks/<method>.md`
-  (+ `report/data.md` for ppr, `report/evaluation.md` for als). Only the integrator (kNN member) pushes to `main`.
+  (+ `report/data.md` for ppr, `report/evaluation.md` for als). Only the integrator (`tasks/integrate.md`) pushes to `main`.
 - **Test stage once**: parameters are fixed in `tools/chosen.json` (chosen on validation). Run tests only with
   `python tools/member.py test <method>`; never re-run a split that has a `metrics.json`, never retune after
   seeing a test number.

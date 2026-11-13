@@ -2,15 +2,16 @@
 
 Tuning is finished. What is left is the final test runs, the scalability runs and the report.
 Each member does their part on their own machine and branch, and pushes it to GitHub. One person
-(the integrator) merges the four branches and builds the final tables.
+(the integrator, `tasks/integrate.md`) merges the branches and builds the final tables and report.
 
 | Task file | Method | Also writes | Branch |
 |---|---|---|---|
-| `tasks/knn.md` | exact user-kNN | integration and final report (integrator) | `member/knn`, `main` |
+| `tasks/knn.md` | exact user-kNN | published the shared foundation | `member/knn` |
 | `tasks/lsh.md` | MinHash-LSH | LSH against exact kNN | `member/lsh` |
 | `tasks/ppr.md` | Monte Carlo PPR | report section on data and splits | `member/ppr` |
 | `tasks/als.md` | ALS | report section on the evaluation protocol | `member/als` |
 | `tasks/scale.md` | all five (timing only) | the 30 scalability runs, by one member on one machine | `member/scale` |
+| `tasks/integrate.md` | – | merge, checks, comparisons, plots, final report (integrator) | `main` |
 
 ## What each member does
 
