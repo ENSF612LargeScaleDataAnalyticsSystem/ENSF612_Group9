@@ -81,16 +81,16 @@ on Windows, `.venv/bin/python` on macOS/Linux (written as `python` below).
   If a split fails, read the end of `logs/final_lsh_<split>.log`, fix the environment cause (memory,
   disk space, another Spark job running) and run the same command again. If it fails twice, **STOP**.
 
-- [ ] **10. Push the results now**, so they are safe: `python tools/member.py push lsh`.
+- [x] **10. Push the results now**, so they are safe: `python tools/member.py push lsh`.
   If the push asks for a GitHub login, **STOP** and ask the member to sign in, then run it again.
 
-- [ ] **11. Compare with the popularity baseline** (paired bootstrap, a few minutes each):
+- [x] **11. Compare with the popularity baseline** (paired bootstrap, a few minutes each):
   ```
   python tools/compare.py results/lsh/user_time/test   results/popularity/user_time/test   > logs/compare_lsh_pop_user_time.log 2>&1
   python tools/compare.py results/lsh/global_time/test results/popularity/global_time/test > logs/compare_lsh_pop_global_time.log 2>&1
   ```
 
-- [ ] **12. LSH against exact kNN (approximation quality).**
+- [x] **12. LSH against exact kNN (approximation quality).**
   Two measurements, both needed for the report.
 
 1. Neighbour quality on the full data (uses the training part of the validation stage, never the test part).
@@ -114,7 +114,7 @@ on Windows, `.venv/bin/python` on macOS/Linux (written as `python` below).
    Copy the three differences with their 95% intervals. (`global_time` kNN is produced by the kNN member;
    the integrator adds that comparison.)
 
-- [ ] **13. Write `report/lsh.md`** (create the `report/` folder if needed). Plain, short sentences;
+- [x] **13. Write `report/lsh.md`** (create the `report/` folder if needed). Plain, short sentences;
   about one page. Outline:
 
   ## 1. Method
@@ -147,9 +147,9 @@ LSH − kNN differences on `user_time`. Say in one sentence what is given up and
   ## 6. Limitations
   Two or three honest points (for example memory use, run time, what `global_time` can evaluate).
 
-- [ ] **14. Final push.** `python tools/member.py push lsh -m "lsh: report section"`. It prints a link:
+- [x] **14. Final push.** `python tools/member.py push lsh -m "lsh: report section"`. It prints a link:
   give that link to the member and ask them to open it in a browser and press **Create pull request**
   (into `main`). Do not merge it; the integrator merges.
 
-- [ ] **15. Done.** Tell the member, in a short message: the test numbers for both splits, where the
+- [x] **15. Done.** Tell the member, in a short message: the test numbers for both splits, where the
   report section is, the pull-request link, and anything that went wrong on the way.
