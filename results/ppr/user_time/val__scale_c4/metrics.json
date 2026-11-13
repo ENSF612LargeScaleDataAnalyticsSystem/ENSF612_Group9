@@ -1,0 +1,37 @@
+{
+  "method": "ppr",
+  "split": "user_time",
+  "stage": "val",
+  "tag": "scale_c4",
+  "params": {
+    "alpha": 0.3,
+    "n_walkers": 2500,
+    "beta": 0.3,
+    "min_visits": 10
+  },
+  "sample": 1.0,
+  "seconds_recommend": 142.84,
+  "seconds_evaluate": 10.19,
+  "k": 10,
+  "rec_rows": 1384930,
+  "rec_users": 138493,
+  "recommended_items_already_rated": 0,
+  "evaluated_users": 130411,
+  "evaluated_users_without_list": 0,
+  "precision@10": 0.046978,
+  "recall@10": 0.097219,
+  "ndcg@10": 0.080567,
+  "catalog_items": 20656,
+  "coverage": 0.07286,
+  "env": {
+    "spark": "4.0.1",
+    "python": "3.11.18",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpu_count": 10,
+    "cores": "4",
+    "driver_memory": "14g"
+  },
+  "finished_utc": "2026-11-13 16:31:59",
+  "command": "/Users/vineeth/Downloads/ensf612-movielens/ENSF612_Group9/src/run.py --method ppr --split user_time --stage val --n-boot 0 --cores 4 --driver-memory 14g --sample 1.0 --tag scale_c4 --param alpha=0.3 --param n_walkers=2500 --param beta=0.3 --param min_visits=10"
+}

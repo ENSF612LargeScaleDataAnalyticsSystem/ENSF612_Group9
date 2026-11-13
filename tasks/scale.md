@@ -34,7 +34,7 @@ That is 6 runs per method, 30 in total. Expect several hours on a 4-core laptop,
 
 ## Steps
 
-- [ ] **1. Branch.** The machine must already have passed the setup of a method task (steps 1–7 of
+- [x] **1. Branch.** The machine must already have passed the setup of a method task (steps 1–7 of
   `tasks/lsh.md`, `ppr.md` or `als.md`). If your own method's work is not pushed yet, finish and push
   that first. Then:
   ```
@@ -43,11 +43,11 @@ That is 6 runs per method, 30 in total. Expect several hours on a 4-core laptop,
   ```
   Verify: `git branch --show-current` prints `member/scale`, and `tools/scale.py` exists.
 
-- [ ] **2. Check.** `python tools/member.py check scale` must print `ALL CHECKS PASSED`.
+- [x] **2. Check.** `python tools/member.py check scale` must print `ALL CHECKS PASSED`.
 
-- [ ] **3. See the plan.** `python tools/scale.py --list` shows 30 runs "to do".
+- [x] **3. See the plan.** `python tools/scale.py --list` shows 30 runs "to do".
 
-- [ ] **4. Run.** Start in the background and wait:
+- [x] **4. Run.** Start in the background and wait:
   ```
   python tools/scale.py
   ```
@@ -55,12 +55,27 @@ That is 6 runs per method, 30 in total. Expect several hours on a 4-core laptop,
   names, fix the cause (memory, disk space, another program) and run the same command again.
   If the same run fails twice, **STOP** and tell the group which one.
 
-- [ ] **5. Sanity check.** `python tools/scale.py --list` shows 30 runs done. For each method, the time
+- [x] **5. Sanity check.** `python tools/scale.py --list` shows 30 runs done. For each method, the time
   should grow with the sample size and should not grow when cores are added. Note anything that
   does not, without re-running it.
 
-- [ ] **6. Push.** `python tools/member.py push scale`. Open the printed link in a browser and press
+  Notes (machine: MacBook, Apple Silicon arm64, 10 CPUs, 24 GB RAM, macOS 27.0.1; `--driver-memory 14g`
+  for all 30 runs, because 8g ran out of memory for LSH on this machine):
+  - All methods: time grows with the sample size, and NDCG@10 on the 25% sample is identical on 1, 2
+    and 4 cores (results do not depend on the core count).
+  - Cores: kNN, LSH, PPR and ALS get faster from 1 to 2 to 4 cores. Popularity does not (3.4 / 3.0 /
+    3.2 s): its runs take about 3 s, so fixed Spark overhead dominates.
+  - One run was repeated. The first PPR 50% run (531.9 s, NDCG@10 0.0803) overlapped a lid-close
+    sleep of the laptop (power log: "Clamshell Sleep" at 2026-11-12 19:38:53, 27 s after the run
+    started), so its time includes sleep and is not a measurement of PPR. The PPR 100% run that
+    followed lost its Spark scheduler after the sleep and never finished. Both were run again on
+    2026-11-13 with the laptop on AC power and kept awake (`caffeinate`): PPR 50% took 62.4 s, with
+    the same NDCG@10 0.0803.
+  - Power: the first 20 runs (popularity, kNN, LSH, PPR 10% and 25%) ran on battery and the last 10
+    on AC power. Low Power Mode was off on both, so the CPU speed is the same.
+
+- [x] **6. Push.** `python tools/member.py push scale`. Open the printed link in a browser and press
   **Create pull request** (into `main`). Do not merge; the integrator merges.
 
-- [ ] **7. Done.** Post a short message to the group: that the 30 runs are in, the machine they were made
+- [x] **7. Done.** Post a short message to the group: that the 30 runs are in, the machine they were made
   on (CPU count, RAM, operating system), the driver memory used, and anything odd from step 5.
