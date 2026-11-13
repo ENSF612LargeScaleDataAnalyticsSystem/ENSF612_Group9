@@ -1,6 +1,6 @@
 # Task: MinHash-LSH (`lsh`)
 
-You are Claude Code working for the group member who owns **lsh**. Do the steps in order. After a step is
+These are the steps for the group member who owns **lsh**. Do the steps in order. After a step is
 done **and verified**, change its `- [ ]` to `- [x]` in this file and go on to the next one. When the
 member says "continue", find the first unticked step and carry on from there. Do not stop between
 steps unless a step says **STOP**.
@@ -10,8 +10,8 @@ on Windows, `.venv/bin/python` on macOS/Linux (written as `python` below).
 
 ## Rules (they protect the comparison between the four methods)
 
-1. **Never edit** `src/`, `tests/`, `tools/`, `requirements.txt`, `reports/`, `README.md`, `CLAUDE.md`,
-   `CHECKLIST.md` or another member's files. Your files are: `results/lsh/`, `report/lsh.md`, `tasks/lsh.md`.
+1. **Never edit** `src/`, `tests/`, `tools/`, `requirements.txt`, `reports/`, `README.md`,
+   `CHECKLIST.md`, the other files in the project root or another member's files. Your files are: `results/lsh/`, `report/lsh.md`, `tasks/lsh.md`.
 2. **The test stage runs once.** Parameters are fixed in `tools/chosen.json` (n_hashes=256, bands=128, similarity=cosine, n_neighbours=100); they were chosen
    on validation. Never change them, never pass `--param` yourself, never re-run a test that produced a
    `metrics.json`, whatever the numbers look like. Always use `tools/member.py test`, which enforces this.
@@ -25,7 +25,7 @@ on Windows, `.venv/bin/python` on macOS/Linux (written as `python` below).
 
 ## Steps
 
-- [ ] **1. Get the repository and your branch.**
+- [x] **1. Get the repository and your branch.**
   If the project is not on this machine yet: `git clone https://github.com/ENSF612LargeScaleDataAnalyticsSystem/ENSF612_Group9.git` and open that folder. Keep it outside
   OneDrive or any synced folder. Then:
   ```
@@ -34,45 +34,45 @@ on Windows, `.venv/bin/python` on macOS/Linux (written as `python` below).
   ```
   (macOS/Linux: `2>/dev/null` instead of `2>nul`.) Verify: `git branch --show-current` prints `member/lsh`.
 
-- [ ] **2. Python environment.**
+- [x] **2. Python environment.**
   Windows: `py -3.11 -m venv .venv` (Python 3.11 exactly; 3.12+ crashes PySpark on Windows).
   macOS/Linux: `python3 -m venv .venv` with Python 3.10 or newer.
   Then `python -m pip install -r requirements.txt`.
   If Python 3.11 is missing on Windows, **STOP** and ask the member to install it
   (`winget install Python.Python.3.11`), then continue.
 
-- [ ] **3. Java and, on Windows, the Hadoop files.**
+- [x] **3. Java and, on Windows, the Hadoop files.**
   Needed: JDK 17 with `JAVA_HOME` set; on Windows also `winutils.exe` and `hadoop.dll` (Hadoop 3.x) in
   `C:\hadoop\bin` with `HADOOP_HOME=C:\hadoop`. README section 1 has the details. Check what is already
   there before changing anything. Installing software or setting user environment variables changes the
   member's machine: **STOP and ask the member first**, then do it (`winget install EclipseAdoptium.Temurin.17.JDK`,
   `setx JAVA_HOME "..."`, `setx HADOOP_HOME C:\hadoop`).
 
-- [ ] **4. Data.**
+- [x] **4. Data.**
   Download <https://files.grouplens.org/datasets/movielens/ml-20m.zip> (about 190 MB) and unzip it so
   that `data/raw/ml-20m/ratings.csv` and `data/raw/ml-20m/movies.csv` exist. Never commit `data/`.
 
-- [ ] **5. Unit tests.** `python -m pytest -q` → 17 passed (about 4 minutes). If any fail, fix the
+- [x] **5. Unit tests.** `python -m pytest -q` → 17 passed (about 4 minutes). If any fail, fix the
   environment (steps 2–3), not the code.
 
-- [ ] **6. Ingest and split** (about 6 and 7 minutes on the group's machine; on 8 GB RAM add `--driver-memory 5g`):
+- [x] **6. Ingest and split** (about 6 and 7 minutes on the group's machine; on 8 GB RAM add `--driver-memory 5g`):
   ```
   python -m src.ingest > logs/ingest.log 2>&1
   python -m src.split  > logs/split.log 2>&1
   ```
   (Create `logs/` first if it does not exist.) Both logs must end without a Python traceback.
 
-- [ ] **7. Machine and data check.** `python tools/member.py check lsh` must print `ALL CHECKS PASSED`.
+- [x] **7. Machine and data check.** `python tools/member.py check lsh` must print `ALL CHECKS PASSED`.
   It verifies the tools, the branch, that shared code is untouched, and that this machine's data profile
   and split statistics are identical to the group's. Fix each `FAIL` using the printed hint and run it
   again. If the data or split check keeps failing, **STOP**: this machine would test on different rows.
 
-- [ ] **8. Reproduce the group's validation number.** `python tools/member.py pilot lsh` (a few minutes;
+- [x] **8. Reproduce the group's validation number.** `python tools/member.py pilot lsh` (a few minutes;
   on 8 GB RAM add `--driver-memory 5g`). It re-runs the chosen parameters on the 10% pilot, validation
   stage, and must print `PILOT REPRODUCED` (the group's NDCG@10 is 0.1068). If it prints `FAIL`,
   **STOP** and report the numbers to the member; do not go on to the test stage.
 
-- [ ] **9. Final test runs.** Start in the background and wait (from half an hour to a few hours in total):
+- [x] **9. Final test runs.** Start in the background and wait (from half an hour to a few hours in total):
   ```
   python tools/member.py test lsh
   ```
