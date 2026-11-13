@@ -1,6 +1,6 @@
 # Task: ALS (Spark MLlib, implicit feedback) (`als`)
 
-You are Claude Code working for the group member who owns **als**. Do the steps in order. After a step is
+These are the steps for the group member who owns **als**. Do the steps in order. After a step is
 done **and verified**, change its `- [ ]` to `- [x]` in this file and go on to the next one. When the
 member says "continue", find the first unticked step and carry on from there. Do not stop between
 steps unless a step says **STOP**.
@@ -10,8 +10,8 @@ on Windows, `.venv/bin/python` on macOS/Linux (written as `python` below).
 
 ## Rules (they protect the comparison between the four methods)
 
-1. **Never edit** `src/`, `tests/`, `tools/`, `requirements.txt`, `reports/`, `README.md`, `CLAUDE.md`,
-   `CHECKLIST.md` or another member's files. Your files are: `results/als/`, `report/als.md`, `report/evaluation.md`, `tasks/als.md`.
+1. **Never edit** `src/`, `tests/`, `tools/`, `requirements.txt`, `reports/`, `README.md`,
+   `CHECKLIST.md`, the other files in the project root or another member's files. Your files are: `results/als/`, `report/als.md`, `report/evaluation.md`, `tasks/als.md`.
 2. **The test stage runs once.** Parameters are fixed in `tools/chosen.json` (rank=128, alpha=1.0, reg=0.1); they were chosen
    on validation. Never change them, never pass `--param` yourself, never re-run a test that produced a
    `metrics.json`, whatever the numbers look like. Always use `tools/member.py test`, which enforces this.
