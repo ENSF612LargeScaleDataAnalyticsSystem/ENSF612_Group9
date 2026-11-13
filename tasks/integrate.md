@@ -25,7 +25,7 @@ un.ps1 <logname> <python args>`.
 
 ## Steps
 
-- [ ] **1. Are all branches there?** `git fetch origin` then `git branch -r`. Needed:
+- [x] **1. Are all branches there?** `git fetch origin` then `git branch -r`. Needed:
   `origin/member/knn`, `origin/member/lsh`, `origin/member/ppr`, `origin/member/als`, `origin/member/scale`. If one is missing,
   **STOP** and note who is still outstanding.
 
