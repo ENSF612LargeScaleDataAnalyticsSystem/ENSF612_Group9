@@ -8,6 +8,9 @@ Do the steps in order. After a step is done **and verified**, change its `- [ ]`
 and go on, so the work can always be picked up again at the first unticked step. Do not stop between
 steps unless a step says **STOP**.
 
+Note: steps A3 and B6–D10 below were carried out through `tasks/integrate.md` and `tasks/scale.md`
+(all ticked there); they are left unticked here only because the work moved to those files.
+
 Run commands from the project root. Spark runs go through `.\tools\run.ps1 <logname> <python args>` or
 `.\.venv\Scripts\python.exe tools\member.py ...` (both set Java/Hadoop).
 

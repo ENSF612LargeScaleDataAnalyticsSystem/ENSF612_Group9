@@ -67,8 +67,9 @@ interval for a difference is narrower than two separate intervals would suggest.
 - Methods never recommend an item the user already rated in training.
 - Tuning used only the validation stage of the 10% pilot. Parameters were fixed in
   `tools/chosen.json` before any test run, and each test split runs only once.
-- The popularity and kNN test runs were made on the group's reference machine. Every other member
-  runs the test stage on their own machine, and only after two checks. `tools/member.py check`
+- The popularity and kNN test runs were made on the group's reference machine (Windows, 4 CPUs).
+  The LSH, PPR and ALS test runs were made on Apple Silicon (macOS 27.0.1, 10 CPUs), as recorded in
+  each run's `metrics.json`. No test run started before two checks on its machine. `tools/member.py check`
   confirms that the machine's data profile and split statistics are identical to the group's
   copies, so every machine scores on the same rows. `tools/member.py pilot` then re-runs the chosen
   parameters on the pilot's validation stage and must reproduce the group's metrics (within 0.002

@@ -73,6 +73,10 @@ tools/run.ps1          Windows helper: sets JAVA_HOME/HADOOP_HOME and logs a run
 tools/make_synthetic.py  fake data in the ml-20m format, for testing
 tools/member.py        group workflow: check / pilot / test / push for one member (Section 8)
 tools/rebuild_summary.py, verify_results.py, summarize.py, compare.py   tables and checks for the report
+tools/growth.py        RQ3: growth exponents, break-even size and 10x prediction from the scale runs
+tools/ppr_exact.py     RQ2: Monte Carlo PPR against exact PPR on 2,000 sampled users (validation stage)
+tools/sysmetrics.py    RQ2/RQ3: shuffle bytes and peak memory per run (Spark REST API + process memory)
+tools/fill_report.py   writes the ppr_exact and sysmetrics results into report/report.md
 tasks/                 one step-by-step task file per member
 report/                report sections written by the members
 tests/                 hand-checked unit tests
