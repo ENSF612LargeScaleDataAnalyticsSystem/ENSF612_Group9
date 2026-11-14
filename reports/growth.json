@@ -1,0 +1,161 @@
+{
+  "fit_from_pct": 25,
+  "users_at_100pct": 130411,
+  "methods": {
+    "popularity": {
+      "a": 0.47883555263717287,
+      "b": 0.18147928293707488,
+      "r2": 0.9726071856625039,
+      "seconds_at_100pct": 4.11,
+      "predicted_seconds_10x": 6.165797097727553,
+      "points": [
+        {
+          "pct": 10,
+          "users": 12905,
+          "seconds": 2.73
+        },
+        {
+          "pct": 25,
+          "users": 32278,
+          "seconds": 3.19
+        },
+        {
+          "pct": 50,
+          "users": 64883,
+          "seconds": 3.49
+        },
+        {
+          "pct": 100,
+          "users": 130411,
+          "seconds": 4.11
+        }
+      ]
+    },
+    "knn": {
+      "a": 2.9976835215793384e-07,
+      "b": 1.688720732774506,
+      "r2": 0.9995115698457371,
+      "seconds_at_100pct": 132.33,
+      "predicted_seconds_10x": 6365.663831920908,
+      "points": [
+        {
+          "pct": 10,
+          "users": 12905,
+          "seconds": 5.06
+        },
+        {
+          "pct": 25,
+          "users": 32278,
+          "seconds": 12.52
+        },
+        {
+          "pct": 50,
+          "users": 64883,
+          "seconds": 38.91
+        },
+        {
+          "pct": 100,
+          "users": 130411,
+          "seconds": 132.33
+        }
+      ]
+    },
+    "lsh": {
+      "a": 6.322352052334623e-07,
+      "b": 1.7478366733295323,
+      "r2": 0.9982364743316009,
+      "seconds_at_100pct": 535.49,
+      "predicted_seconds_10x": 30863.782296147103,
+      "points": [
+        {
+          "pct": 10,
+          "users": 12905,
+          "seconds": 13.92
+        },
+        {
+          "pct": 25,
+          "users": 32278,
+          "seconds": 46.65
+        },
+        {
+          "pct": 50,
+          "users": 64883,
+          "seconds": 172.75
+        },
+        {
+          "pct": 100,
+          "users": 130411,
+          "seconds": 535.49
+        }
+      ]
+    },
+    "ppr": {
+      "a": 0.005479182859265536,
+      "b": 0.8567878785453317,
+      "r2": 0.9527725848316575,
+      "seconds_at_100pct": 142.84,
+      "predicted_seconds_10x": 951.1366052473772,
+      "points": [
+        {
+          "pct": 10,
+          "users": 12905,
+          "seconds": 17.13
+        },
+        {
+          "pct": 25,
+          "users": 32278,
+          "seconds": 43.18
+        },
+        {
+          "pct": 50,
+          "users": 64883,
+          "seconds": 62.36
+        },
+        {
+          "pct": 100,
+          "users": 130411,
+          "seconds": 142.84
+        }
+      ]
+    },
+    "als": {
+      "a": 0.0033739310546485515,
+      "b": 0.9884239879140762,
+      "r2": 0.999870524000779,
+      "seconds_at_100pct": 385.66,
+      "predicted_seconds_10x": 3738.173697625438,
+      "points": [
+        {
+          "pct": 10,
+          "users": 12905,
+          "seconds": 44.97
+        },
+        {
+          "pct": 25,
+          "users": 32278,
+          "seconds": 97.01
+        },
+        {
+          "pct": 50,
+          "users": 64883,
+          "seconds": 190.82
+        },
+        {
+          "pct": 100,
+          "users": 130411,
+          "seconds": 385.66
+        }
+      ]
+    }
+  },
+  "pairs": [
+    {
+      "exact": "knn",
+      "approximation": "lsh",
+      "b_exact": 1.688720732774506,
+      "b_approx": 1.7478366733295323,
+      "crossing_users": null,
+      "verdict": "no crossing: the approximation grows at least as fast"
+    }
+  ]
+}
