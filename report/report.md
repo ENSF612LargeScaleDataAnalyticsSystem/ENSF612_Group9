@@ -597,6 +597,16 @@ run on the same machine, so their times can be compared.
 Raw overlap with the exact top 10 goes from 0.5089 at W = 100 to 0.8732 at
 W = 2,500. At every W tested the walks were faster than the exact computation (1.86 s per 1,000 users at W = 2,500 against 152.68 s for exact PPR).
 
+Under the chosen rules the overlap is not monotone in W: 0.7568 at W = 100 but 0.5335 at W = 250. This is an
+effect of the visit filter, not better estimates at W = 100 (`tools/ppr_fill_check.py`, `reports/ppr_fill_check.md`;
+same users and seeds). With 100 walkers and min_visits 10, the median user keeps only 2 unseen movies, and 99.6% of
+the users keep fewer than 10, so 80.4% of the top-10 slots are filled with the most popular unseen movies (Section
+6.1). The exact top 10 with the penalty is itself made of very popular movies (median popularity rank 9), so 75.1%
+of these fill slots are also in the exact top 10. At W = 250 the median user keeps 29 movies and only 1.9% of the
+slots are filled; the list now comes from the walks, but 71.5% of the movies it picks have fewer than 20 visits, so
+their counts are still noisy, and only 52.8% of them are in the exact top 10. From W = 1,000 on, no slot is filled,
+almost no picked movie is that close to the filter, and the overlap rises with W (0.7294, then 0.8238).
+
 ### 6.7 Limitations
 
 - **Memory.** Each batch of 256 users keeps a dense count matrix with one value per user and movie,
