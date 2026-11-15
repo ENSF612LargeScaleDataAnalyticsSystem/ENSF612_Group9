@@ -1,0 +1,39 @@
+{
+  "method": "ppr",
+  "sample": 0.1,
+  "cores": 4,
+  "driver_memory": "14g",
+  "evaluated_users": 12905,
+  "seconds_recommend": 18.46,
+  "recommend": {
+    "shuffle_write_bytes": 0,
+    "shuffle_read_bytes": 0,
+    "memory_spilled_bytes": 0,
+    "disk_spilled_bytes": 0,
+    "input_bytes": 31854472,
+    "stages": 5
+  },
+  "evaluate": {
+    "shuffle_write_bytes": 21095168,
+    "shuffle_read_bytes": 21095168,
+    "memory_spilled_bytes": 0,
+    "disk_spilled_bytes": 0,
+    "input_bytes": 70747258,
+    "stages": 26
+  },
+  "all": {
+    "shuffle_write_bytes": 21095168,
+    "shuffle_read_bytes": 21095168,
+    "memory_spilled_bytes": 0,
+    "disk_spilled_bytes": 0,
+    "input_bytes": 102601730,
+    "stages": 31
+  },
+  "peak_rss_bytes": 4668473344,
+  "peak_jvm_rss_bytes": 3345268736,
+  "peak_jvm_heap_bytes": 783734272,
+  "machine": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "cpu_count": 10
+  }
+}

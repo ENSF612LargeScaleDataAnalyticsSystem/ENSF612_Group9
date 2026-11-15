@@ -572,7 +572,30 @@ the share of resamples where PPR was not better is 0.000 in all six cases. The g
 
 ### 6.6 Approximation quality against exact PPR
 
-PPR_EXACT_SECTION
+The proposal's ground truth for Monte Carlo PPR is exact PPR on 2,000 sampled users.
+`tools/ppr_exact.py` computes the exact expected visit counts of the method's own walk (alpha 0.3,
+20 steps; Section 6.1) by repeated sparse matrix products, and compares the top-10 unseen movies
+with those of the Monte Carlo walks from the same users. It uses the training part of the validation stage
+of `user_time` (2,000 users with at least one like, sampled with seed 612); the test part is
+never read. NDCG@10 is scored against the validation target with `src/evaluate.py`.
+
+Two comparisons: **raw PPR** (no popularity penalty, no visit filter) measures the approximation itself;
+the **chosen rules** apply the same penalty (beta 0.3) to both sides and the visit filter
+(min_visits 10) to the Monte Carlo side only, because exact scores have no sampling noise to filter.
+
+| Walkers W | Overlap@10, raw | NDCG@10, raw | Overlap@10, chosen rules | NDCG@10, chosen rules | Monte Carlo s per 1,000 users |
+|---|---|---|---|---|---|
+| 100 | 0.5089 | 0.0644 | 0.7568 | 0.0681 | 0.48 |
+| 250 | 0.6509 | 0.0721 | 0.5335 | 0.0705 | 0.55 |
+| 1,000 | 0.8062 | 0.0790 | 0.7294 | 0.0822 | 1.0 |
+| 2,500 (chosen) | 0.8732 | 0.0797 | 0.8238 | 0.0842 | 1.86 |
+
+Exact PPR: NDCG@10 0.0802 raw and 0.0867 with the penalty; 152.68 s per
+1,000 users. Exact and Monte Carlo scores are both computed with numpy on one core of the driver, in the same
+run on the same machine, so their times can be compared.
+
+Raw overlap with the exact top 10 goes from 0.5089 at W = 100 to 0.8732 at
+W = 2,500. At every W tested the walks were faster than the exact computation (1.86 s per 1,000 users at W = 2,500 against 152.68 s for exact PPR).
 
 ### 6.7 Limitations
 
@@ -864,7 +887,29 @@ The break-even of Monte Carlo PPR against exact PPR is in Section 6.6.
 
 ### 9.5 Shuffle volume and peak memory
 
-SYSMETRICS_SECTION
+The scalability timings above do not include shuffle volume or memory, so `tools/sysmetrics.py` repeats the
+size runs (10% to 100% of the users, 4 cores, chosen parameters, driver memory 14g) on the same machine and
+reads Spark's monitoring REST API (shuffle and spill, summed over the stages of the recommend phase) and the
+resident memory of the whole process tree (Python driver, Spark JVM, Python workers; sampled every 0.5 s).
+
+| Method | Shuffle write, 10% (MB) | Shuffle write, 100% (MB) | Spilled to disk, 100% (MB) | Peak resident memory, 10% (GB) | Peak resident memory, 100% (GB) | Peak JVM heap, 100% (GB) |
+|---|---|---|---|---|---|---|
+| popularity | 4.8 | 41.9 | 0.0 | 2.07 | 3.13 | 2.65 |
+| exact kNN | 3.8 | 0.0 | 0.0 | 2.16 | 2.73 | 2.57 |
+| LSH | 164.5 | 10,848.6 | 0.0 | 3.13 | 4.50 | 13.57 |
+| PPR | 0.0 | 0.0 | 0.0 | 4.35 | 4.96 | 2.40 |
+| ALS | 855.9 | 6,336.0 | 0.0 | 3.04 | 4.58 | 2.79 |
+
+(Full table with every size in `reports/sysmetrics.md`.) At 100% of the users, LSH writes
+the most shuffle data (10,848.6 MB) and also needs the
+most memory (13.57 GB of JVM heap in use, against 2.40 GB for
+PPR). Memory is compared by the JVM heap because the resident memory understates a large heap
+on macOS: `ps` does not count pages that the system has compressed or swapped out, so the resident memory of
+LSH peaked at only 4.50 GB. Exact kNN and PPR collect the training index on the
+driver and broadcast it to the workers, so they shuffle almost nothing; LSH shuffles its (band, bucket) keys
+when it groups users into buckets, and MLlib's ALS shuffles factor blocks in every iteration. The small shuffle
+values of popularity, exact kNN and PPR are not exact: the recommend and evaluate phases are separated by time, and some
+shuffles were written in one phase and read in the other (in `reports/sysmetrics.md`, shuffle write and read differ).
 
 ### 9.6 Notes on the runs
 
@@ -904,7 +949,7 @@ every data size (Section 9.4). Its banding is loose (2 values per band), so each
 candidates on average, and finding them costs more than exact kNN's direct pass over the item → likers
 index at this data size. Stricter banding cut accuracy in tuning (Section 5.2).
 
-PPR_EXACT_CONCLUSION
+For Monte Carlo PPR, the top 10 of the chosen 2,500 walkers overlaps the exact PPR top 10 by 0.8732 (raw scores), with NDCG@10 0.0797 against 0.0802 for exact PPR on the same 2,000 users (Section 6.6). At every W tested the walks were faster than the exact computation (1.86 s per 1,000 users at W = 2,500 against 152.68 s for exact PPR).
 
 **RQ3: How do the methods scale?** On one machine (10 CPUs, Apple Silicon, 4 cores used), going from
 50% to 100% of users roughly doubles the time of ALS (190.82 s → 385.66 s), while exact kNN
@@ -914,7 +959,7 @@ with each other. PPR (62.36 s → 142.84 s) sits in between, and popularity stay
 nothing. Every method gives exactly the same recommendations on 1, 2 and 4 cores. Fitted growth
 exponents are 1.69 for exact kNN, 1.75 for LSH, 0.99 for ALS and 0.86 for PPR (Section 9.4), so with the
 chosen banding LSH has no break-even size against exact kNN: it is predicted to stay slower at ten times
-the users. SYSMETRICS_CONCLUSION
+the users. Peak JVM heap at 100% of the users ranges from 2.40 GB (PPR) to 13.57 GB (LSH), and LSH shuffles the most data (10,848.6 MB; Section 9.5).
 
 **Overall.** ALS gives the best accuracy at a run time that grows in proportion to the data. Exact kNN
 is the fastest of the accurate methods at this data size, but its cost grows fastest with more users.

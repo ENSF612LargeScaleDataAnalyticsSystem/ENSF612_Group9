@@ -93,25 +93,34 @@ def sys_texts(rows):
         f"{gb(full[m]['peak_jvm_heap_bytes']) if full[m]['peak_jvm_heap_bytes'] else 'n/a'} |" for m in full)
     any_row = next(iter(full.values()))
     top_shuffle = max(full, key=lambda m: full[m]["recommend"]["shuffle_write_bytes"])
-    top_mem = max(full, key=lambda m: full[m]["peak_rss_bytes"])
-    low_mem = min(full, key=lambda m: full[m]["peak_rss_bytes"])
+    # compare memory by the JVM heap in use: on macOS the resident size from `ps` leaves out compressed and
+    # swapped pages, so it understates a large heap
+    top_mem = max(full, key=lambda m: full[m]["peak_jvm_heap_bytes"] or 0)
+    low_mem = min(full, key=lambda m: full[m]["peak_jvm_heap_bytes"] or 0)
+    # a shuffle that is written but not read back in full was split between the recommend and evaluate phases
+    noisy = [NAMES.get(m, m) for m in full
+             if any(x["recommend"]["shuffle_write_bytes"] != x["recommend"]["shuffle_read_bytes"] for x in by[m].values())]
     section = f"""The scalability timings above do not include shuffle volume or memory, so `tools/sysmetrics.py` repeats the
 size runs ({lo_s * 100:g}% to {hi_s * 100:g}% of the users, 4 cores, chosen parameters, driver memory {any_row['driver_memory']}) on the same machine and
 reads Spark's monitoring REST API (shuffle and spill, summed over the stages of the recommend phase) and the
 resident memory of the whole process tree (Python driver, Spark JVM, Python workers; sampled every 0.5 s).
 
-| Method | Shuffle write, {lo_s * 100:g}% (MB) | Shuffle write, {hi_s * 100:g}% (MB) | Spilled to disk, {hi_s * 100:g}% (MB) | Peak memory, {lo_s * 100:g}% (GB) | Peak memory, {hi_s * 100:g}% (GB) | Peak JVM heap, {hi_s * 100:g}% (GB) |
+| Method | Shuffle write, {lo_s * 100:g}% (MB) | Shuffle write, {hi_s * 100:g}% (MB) | Spilled to disk, {hi_s * 100:g}% (MB) | Peak resident memory, {lo_s * 100:g}% (GB) | Peak resident memory, {hi_s * 100:g}% (GB) | Peak JVM heap, {hi_s * 100:g}% (GB) |
 |---|---|---|---|---|---|---|
 {table}
 
 (Full table with every size in `reports/sysmetrics.md`.) At {hi_s * 100:g}% of the users, {NAMES.get(top_shuffle, top_shuffle)} writes
-the most shuffle data ({mb(full[top_shuffle]['recommend']['shuffle_write_bytes'])} MB) and {NAMES.get(top_mem, top_mem)} needs the
-most memory ({gb(full[top_mem]['peak_rss_bytes'])} GB, against {gb(full[low_mem]['peak_rss_bytes'])} GB for
-{NAMES.get(low_mem, low_mem)}). Exact kNN and PPR collect the training index on the driver and broadcast it to the
-workers, so they shuffle almost nothing and their cost shows up as memory; LSH shuffles its (band, bucket) keys
-when it groups users into buckets, and MLlib's ALS shuffles factor blocks in every iteration."""
-    conclusion = (f"Peak memory at {hi_s * 100:g}% of the users ranges from {gb(full[low_mem]['peak_rss_bytes'])} GB "
-                  f"({NAMES.get(low_mem, low_mem)}) to {gb(full[top_mem]['peak_rss_bytes'])} GB ({NAMES.get(top_mem, top_mem)}), "
+the most shuffle data ({mb(full[top_shuffle]['recommend']['shuffle_write_bytes'])} MB) and {'also' if top_mem == top_shuffle else NAMES.get(top_mem, top_mem)} needs the
+most memory ({gb(full[top_mem]['peak_jvm_heap_bytes'])} GB of JVM heap in use, against {gb(full[low_mem]['peak_jvm_heap_bytes'])} GB for
+{NAMES.get(low_mem, low_mem)}). Memory is compared by the JVM heap because the resident memory understates a large heap
+on macOS: `ps` does not count pages that the system has compressed or swapped out, so the resident memory of
+{NAMES.get(top_mem, top_mem)} peaked at only {gb(full[top_mem]['peak_rss_bytes'])} GB. Exact kNN and PPR collect the training index on the
+driver and broadcast it to the workers, so they shuffle almost nothing; LSH shuffles its (band, bucket) keys
+when it groups users into buckets, and MLlib's ALS shuffles factor blocks in every iteration. The small shuffle
+values of {', '.join(noisy[:-1]) + ' and ' + noisy[-1] if len(noisy) > 1 else ''.join(noisy)} are not exact: the recommend and evaluate phases are separated by time, and some
+shuffles were written in one phase and read in the other (in `reports/sysmetrics.md`, shuffle write and read differ)."""
+    conclusion = (f"Peak JVM heap at {hi_s * 100:g}% of the users ranges from {gb(full[low_mem]['peak_jvm_heap_bytes'])} GB "
+                  f"({NAMES.get(low_mem, low_mem)}) to {gb(full[top_mem]['peak_jvm_heap_bytes'])} GB ({NAMES.get(top_mem, top_mem)}), "
                   f"and {NAMES.get(top_shuffle, top_shuffle)} shuffles the most data "
                   f"({mb(full[top_shuffle]['recommend']['shuffle_write_bytes'])} MB; Section 9.5).")
     return section, conclusion

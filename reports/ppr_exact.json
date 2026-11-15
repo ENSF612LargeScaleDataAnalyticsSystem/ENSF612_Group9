@@ -1,0 +1,55 @@
+{
+  "split": "user_time",
+  "stage": "val",
+  "sampled_users": 2000,
+  "alpha": 0.3,
+  "n_steps": 20,
+  "beta": 0.3,
+  "min_visits": 10,
+  "chosen_walkers": 2500,
+  "machine": "macOS-27.0.1-arm64-arm-64bit",
+  "exact": {
+    "seconds": 305.36,
+    "seconds_per_1000_users": 152.68,
+    "ndcg_raw": 0.080199,
+    "ndcg_beta": 0.086665
+  },
+  "monte_carlo": [
+    {
+      "walkers": 100,
+      "seconds": 0.95,
+      "seconds_per_1000_users": 0.48,
+      "overlap_raw": 0.5089,
+      "overlap_chosen_rules": 0.7568,
+      "ndcg_raw": 0.064387,
+      "ndcg_chosen_rules": 0.068131
+    },
+    {
+      "walkers": 250,
+      "seconds": 1.1,
+      "seconds_per_1000_users": 0.55,
+      "overlap_raw": 0.6509,
+      "overlap_chosen_rules": 0.5335,
+      "ndcg_raw": 0.072062,
+      "ndcg_chosen_rules": 0.070508
+    },
+    {
+      "walkers": 1000,
+      "seconds": 2.0,
+      "seconds_per_1000_users": 1.0,
+      "overlap_raw": 0.8062,
+      "overlap_chosen_rules": 0.7294,
+      "ndcg_raw": 0.078968,
+      "ndcg_chosen_rules": 0.082177
+    },
+    {
+      "walkers": 2500,
+      "seconds": 3.71,
+      "seconds_per_1000_users": 1.86,
+      "overlap_raw": 0.8732,
+      "overlap_chosen_rules": 0.8238,
+      "ndcg_raw": 0.079666,
+      "ndcg_chosen_rules": 0.084245
+    }
+  ]
+}

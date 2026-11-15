@@ -1,0 +1,782 @@
+[
+  {
+    "method": "popularity",
+    "sample": 0.1,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 12905,
+    "seconds_recommend": 3.52,
+    "recommend": {
+      "shuffle_write_bytes": 4994251,
+      "shuffle_read_bytes": 5559684,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 61719944,
+      "stages": 9
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 21348171,
+      "shuffle_read_bytes": 21348171,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 70294591,
+      "stages": 27
+    },
+    "all": {
+      "shuffle_write_bytes": 26342422,
+      "shuffle_read_bytes": 26907855,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 132014535,
+      "stages": 36
+    },
+    "peak_rss_bytes": 2220425216,
+    "peak_jvm_rss_bytes": 1962704896,
+    "peak_jvm_heap_bytes": 0,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "popularity",
+    "sample": 0.25,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 32278,
+    "seconds_recommend": 4.29,
+    "recommend": {
+      "shuffle_write_bytes": 20369970,
+      "shuffle_read_bytes": 21084316,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 62181411,
+      "stages": 12
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 43285656,
+      "shuffle_read_bytes": 43285656,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 70939885,
+      "stages": 24
+    },
+    "all": {
+      "shuffle_write_bytes": 63655626,
+      "shuffle_read_bytes": 64369972,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 133121296,
+      "stages": 36
+    },
+    "peak_rss_bytes": 2152628224,
+    "peak_jvm_rss_bytes": 1883570176,
+    "peak_jvm_heap_bytes": 0,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "popularity",
+    "sample": 0.5,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 64883,
+    "seconds_recommend": 4.1,
+    "recommend": {
+      "shuffle_write_bytes": 45454512,
+      "shuffle_read_bytes": 40576031,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 63539560,
+      "stages": 13
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 82076689,
+      "shuffle_read_bytes": 87767314,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 71585848,
+      "stages": 23
+    },
+    "all": {
+      "shuffle_write_bytes": 127531201,
+      "shuffle_read_bytes": 128343345,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 135125408,
+      "stages": 36
+    },
+    "peak_rss_bytes": 3273359360,
+    "peak_jvm_rss_bytes": 3022798848,
+    "peak_jvm_heap_bytes": 2021018760,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "popularity",
+    "sample": 1.0,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 130411,
+    "seconds_recommend": 6.13,
+    "recommend": {
+      "shuffle_write_bytes": 43975966,
+      "shuffle_read_bytes": 44901424,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 60999048,
+      "stages": 9
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 218984870,
+      "shuffle_read_bytes": 218984870,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 106801200,
+      "stages": 30
+    },
+    "all": {
+      "shuffle_write_bytes": 262960836,
+      "shuffle_read_bytes": 263886294,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 167800248,
+      "stages": 39
+    },
+    "peak_rss_bytes": 3355459584,
+    "peak_jvm_rss_bytes": 3245129728,
+    "peak_jvm_heap_bytes": 2845570176,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "knn",
+    "sample": 0.1,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 12905,
+    "seconds_recommend": 5.88,
+    "recommend": {
+      "shuffle_write_bytes": 3932482,
+      "shuffle_read_bytes": 3932482,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 32177044,
+      "stages": 8
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 18684606,
+      "shuffle_read_bytes": 18684606,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 100408640,
+      "stages": 26
+    },
+    "all": {
+      "shuffle_write_bytes": 22617088,
+      "shuffle_read_bytes": 22617088,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 132585684,
+      "stages": 34
+    },
+    "peak_rss_bytes": 2318565376,
+    "peak_jvm_rss_bytes": 1894105088,
+    "peak_jvm_heap_bytes": 1407389184,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "knn",
+    "sample": 0.25,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 32278,
+    "seconds_recommend": 16.06,
+    "recommend": {
+      "shuffle_write_bytes": 0,
+      "shuffle_read_bytes": 0,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 31854472,
+      "stages": 5
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 55555638,
+      "shuffle_read_bytes": 55555638,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 73059057,
+      "stages": 26
+    },
+    "all": {
+      "shuffle_write_bytes": 55555638,
+      "shuffle_read_bytes": 55555638,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 104913529,
+      "stages": 31
+    },
+    "peak_rss_bytes": 2664251392,
+    "peak_jvm_rss_bytes": 2195324928,
+    "peak_jvm_heap_bytes": 464800192,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "knn",
+    "sample": 0.5,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 64883,
+    "seconds_recommend": 49.2,
+    "recommend": {
+      "shuffle_write_bytes": 20089132,
+      "shuffle_read_bytes": 0,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 33346574,
+      "stages": 6
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 88782616,
+      "shuffle_read_bytes": 108448733,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 104211984,
+      "stages": 28
+    },
+    "all": {
+      "shuffle_write_bytes": 108871748,
+      "shuffle_read_bytes": 108448733,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 137558558,
+      "stages": 34
+    },
+    "peak_rss_bytes": 3297558528,
+    "peak_jvm_rss_bytes": 2538225664,
+    "peak_jvm_heap_bytes": 2220000096,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "knn",
+    "sample": 1.0,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 130411,
+    "seconds_recommend": 206.54,
+    "recommend": {
+      "shuffle_write_bytes": 0,
+      "shuffle_read_bytes": 0,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 31854472,
+      "stages": 5
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 221876074,
+      "shuffle_read_bytes": 221876074,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 110808618,
+      "stages": 29
+    },
+    "all": {
+      "shuffle_write_bytes": 221876074,
+      "shuffle_read_bytes": 221876074,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 142663090,
+      "stages": 34
+    },
+    "peak_rss_bytes": 2933096448,
+    "peak_jvm_rss_bytes": 2795732992,
+    "peak_jvm_heap_bytes": 2762212896,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "lsh",
+    "sample": 0.1,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 12905,
+    "seconds_recommend": 19.25,
+    "recommend": {
+      "shuffle_write_bytes": 172533127,
+      "shuffle_read_bytes": 172533127,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 270088120,
+      "stages": 14
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 22805690,
+      "shuffle_read_bytes": 22805690,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 70702351,
+      "stages": 27
+    },
+    "all": {
+      "shuffle_write_bytes": 195338817,
+      "shuffle_read_bytes": 195338817,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 340790471,
+      "stages": 41
+    },
+    "peak_rss_bytes": 3365601280,
+    "peak_jvm_rss_bytes": 3002777600,
+    "peak_jvm_heap_bytes": 2744174936,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "lsh",
+    "sample": 0.25,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 32278,
+    "seconds_recommend": 77.0,
+    "recommend": {
+      "shuffle_write_bytes": 1033139099,
+      "shuffle_read_bytes": 1033139099,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 1335073176,
+      "stages": 14
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 53214502,
+      "shuffle_read_bytes": 53214502,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 73719702,
+      "stages": 27
+    },
+    "all": {
+      "shuffle_write_bytes": 1086353601,
+      "shuffle_read_bytes": 1086353601,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 1408792878,
+      "stages": 41
+    },
+    "peak_rss_bytes": 3505487872,
+    "peak_jvm_rss_bytes": 3178676224,
+    "peak_jvm_heap_bytes": 3490774992,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "lsh",
+    "sample": 0.5,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 64883,
+    "seconds_recommend": 221.72,
+    "recommend": {
+      "shuffle_write_bytes": 3769299311,
+      "shuffle_read_bytes": 3769299311,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 4394347176,
+      "stages": 14
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 106625911,
+      "shuffle_read_bytes": 106625911,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 77331981,
+      "stages": 26
+    },
+    "all": {
+      "shuffle_write_bytes": 3875925222,
+      "shuffle_read_bytes": 3875925222,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 4471679157,
+      "stages": 40
+    },
+    "peak_rss_bytes": 4405755904,
+    "peak_jvm_rss_bytes": 4156981248,
+    "peak_jvm_heap_bytes": 8598638600,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "lsh",
+    "sample": 1.0,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 130411,
+    "seconds_recommend": 641.32,
+    "recommend": {
+      "shuffle_write_bytes": 11375633890,
+      "shuffle_read_bytes": 11375633890,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 13495508520,
+      "stages": 14
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 225140544,
+      "shuffle_read_bytes": 225140544,
+      "memory_spilled_bytes": 8388608,
+      "disk_spilled_bytes": 3195818,
+      "input_bytes": 113473552,
+      "stages": 29
+    },
+    "all": {
+      "shuffle_write_bytes": 11600774434,
+      "shuffle_read_bytes": 11600774434,
+      "memory_spilled_bytes": 8388608,
+      "disk_spilled_bytes": 3195818,
+      "input_bytes": 13608982072,
+      "stages": 43
+    },
+    "peak_rss_bytes": 4834426880,
+    "peak_jvm_rss_bytes": 4581064704,
+    "peak_jvm_heap_bytes": 14567286016,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "ppr",
+    "sample": 0.1,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 12905,
+    "seconds_recommend": 18.46,
+    "recommend": {
+      "shuffle_write_bytes": 0,
+      "shuffle_read_bytes": 0,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 31854472,
+      "stages": 5
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 21095168,
+      "shuffle_read_bytes": 21095168,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 70747258,
+      "stages": 26
+    },
+    "all": {
+      "shuffle_write_bytes": 21095168,
+      "shuffle_read_bytes": 21095168,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 102601730,
+      "stages": 31
+    },
+    "peak_rss_bytes": 4668473344,
+    "peak_jvm_rss_bytes": 3345268736,
+    "peak_jvm_heap_bytes": 783734272,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "ppr",
+    "sample": 0.25,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 32278,
+    "seconds_recommend": 47.19,
+    "recommend": {
+      "shuffle_write_bytes": 9030283,
+      "shuffle_read_bytes": 0,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 32523544,
+      "stages": 6
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 43104269,
+      "shuffle_read_bytes": 52134552,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 101679010,
+      "stages": 29
+    },
+    "all": {
+      "shuffle_write_bytes": 52134552,
+      "shuffle_read_bytes": 52134552,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 134202554,
+      "stages": 35
+    },
+    "peak_rss_bytes": 4419747840,
+    "peak_jvm_rss_bytes": 2954067968,
+    "peak_jvm_heap_bytes": 834947624,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "ppr",
+    "sample": 0.5,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 64883,
+    "seconds_recommend": 90.98,
+    "recommend": {
+      "shuffle_write_bytes": 18052695,
+      "shuffle_read_bytes": 0,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 33180135,
+      "stages": 6
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 90261869,
+      "shuffle_read_bytes": 108314564,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 103916137,
+      "stages": 28
+    },
+    "all": {
+      "shuffle_write_bytes": 108314564,
+      "shuffle_read_bytes": 108314564,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 137096272,
+      "stages": 34
+    },
+    "peak_rss_bytes": 4234969088,
+    "peak_jvm_rss_bytes": 2957819904,
+    "peak_jvm_heap_bytes": 1661019904,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "ppr",
+    "sample": 1.0,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 130411,
+    "seconds_recommend": 177.6,
+    "recommend": {
+      "shuffle_write_bytes": 0,
+      "shuffle_read_bytes": 0,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 31854472,
+      "stages": 5
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 215519569,
+      "shuffle_read_bytes": 215519569,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 80335240,
+      "stages": 26
+    },
+    "all": {
+      "shuffle_write_bytes": 215519569,
+      "shuffle_read_bytes": 215519569,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 112189712,
+      "stages": 31
+    },
+    "peak_rss_bytes": 5322440704,
+    "peak_jvm_rss_bytes": 3487236096,
+    "peak_jvm_heap_bytes": 2581539144,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "als",
+    "sample": 0.1,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 12905,
+    "seconds_recommend": 41.02,
+    "recommend": {
+      "shuffle_write_bytes": 897471114,
+      "shuffle_read_bytes": 897471114,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 353704416,
+      "stages": 55
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 22033796,
+      "shuffle_read_bytes": 22033796,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 71093886,
+      "stages": 27
+    },
+    "all": {
+      "shuffle_write_bytes": 919504910,
+      "shuffle_read_bytes": 919504910,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 424798302,
+      "stages": 82
+    },
+    "peak_rss_bytes": 3260366848,
+    "peak_jvm_rss_bytes": 2124824576,
+    "peak_jvm_heap_bytes": 1005357128,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "als",
+    "sample": 0.25,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 32278,
+    "seconds_recommend": 86.77,
+    "recommend": {
+      "shuffle_write_bytes": 1901193986,
+      "shuffle_read_bytes": 1901193986,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 706628544,
+      "stages": 55
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 57155588,
+      "shuffle_read_bytes": 57155588,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 73308893,
+      "stages": 27
+    },
+    "all": {
+      "shuffle_write_bytes": 1958349574,
+      "shuffle_read_bytes": 1958349574,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 779937437,
+      "stages": 82
+    },
+    "peak_rss_bytes": 3804004352,
+    "peak_jvm_rss_bytes": 2571124736,
+    "peak_jvm_heap_bytes": 1327362016,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "als",
+    "sample": 0.5,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 64883,
+    "seconds_recommend": 156.39,
+    "recommend": {
+      "shuffle_write_bytes": 3501776850,
+      "shuffle_read_bytes": 3501776850,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 1282595168,
+      "stages": 55
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 111810049,
+      "shuffle_read_bytes": 111810049,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 76293910,
+      "stages": 26
+    },
+    "all": {
+      "shuffle_write_bytes": 3613586899,
+      "shuffle_read_bytes": 3613586899,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 1358889078,
+      "stages": 81
+    },
+    "peak_rss_bytes": 3938140160,
+    "peak_jvm_rss_bytes": 2899738624,
+    "peak_jvm_heap_bytes": 1530484192,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  },
+  {
+    "method": "als",
+    "sample": 1.0,
+    "cores": 4,
+    "driver_memory": "14g",
+    "evaluated_users": 130411,
+    "seconds_recommend": 293.07,
+    "recommend": {
+      "shuffle_write_bytes": 6643744321,
+      "shuffle_read_bytes": 6643744321,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 2434322608,
+      "stages": 55
+    },
+    "evaluate": {
+      "shuffle_write_bytes": 221705086,
+      "shuffle_read_bytes": 221705086,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 81894064,
+      "stages": 26
+    },
+    "all": {
+      "shuffle_write_bytes": 6865449407,
+      "shuffle_read_bytes": 6865449407,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "input_bytes": 2516216672,
+      "stages": 81
+    },
+    "peak_rss_bytes": 4921245696,
+    "peak_jvm_rss_bytes": 3752214528,
+    "peak_jvm_heap_bytes": 2990759472,
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "cpu_count": 10
+    }
+  }
+]
