@@ -85,8 +85,8 @@ LSH neighbour quality: `python tools/lsh_recall.py --n-hashes 128 --bands 64`.
 - [x] `--cores 1`, `2`, `4` with the same `--driver-memory` for each method (14g, one machine)
 - [x] LSH vs exact kNN: neighbour recall and time (`report/lsh.md`, `report/scalability.md` §4)
 - [x] Growth exponents and break-even size from the scale runs (`tools/growth.py` → `reports/growth.md`)
-- [ ] Shuffle bytes and peak memory per run: `tools/sysmetrics.py` (built; runs on the scale machine pending)
-- [ ] Monte Carlo vs exact PPR on 2,000 users: `tools/ppr_exact.py` (built; run pending), then `tools/fill_report.py`
+- [x] Shuffle bytes and peak memory per run: `tools/sysmetrics.py` → `reports/sysmetrics.md`, report Section 9.5
+- [x] Monte Carlo vs exact PPR on 2,000 users: `tools/ppr_exact.py` → `reports/ppr_exact.md`, report Section 6.6
 
 ## 7. Report
 - [x] Results tables from `results/summary.csv` with 95% bootstrap CIs (`reports/results.md`)

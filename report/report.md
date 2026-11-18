@@ -931,7 +931,8 @@ shuffles were written in one phase and read in the other (in `reports/sysmetrics
 
 ## 10. Conclusion
 
-**RQ1: How accurate are the methods?** Test NDCG@10 with 95% intervals:
+**RQ1: Which method gives the best top-10 lists, and does the ranking change on the global split?** Test
+NDCG@10 with 95% intervals:
 
 | Method | user_time | global_time |
 |---|---|---|
@@ -950,16 +951,21 @@ above popularity. The ranking ALS > kNN ≈ LSH > PPR > popularity is the same o
 compared with `user_time`, because it evaluates different and far fewer users (5,542 against 135,599),
 with different targets (Section 2.5).
 
-**RQ2: What does the LSH approximation cost and save?** On accuracy it costs almost nothing. LSH
+**RQ2: What do the approximations cost and save?** For LSH, on accuracy it costs almost nothing. LSH
 finds 0.9164 of the exact top-100 neighbours on the full data, with 0.9898 of their similarity, and its
 recommendations are as good as exact kNN: −0.0001 [−0.0003, +0.0001] NDCG@10 on `user_time` and
 −0.0005 [−0.0014, +0.0004] on `global_time`. But with the chosen parameters it saves no time. On one
 machine, LSH took 535.49 s on all users against 132.33 s for exact kNN (4 cores), and it was slower at
 every data size (Section 9.4). Its banding is loose (2 values per band), so each user still has 11,665.3
 candidates on average, and finding them costs more than exact kNN's direct pass over the item → likers
-index at this data size. Stricter banding cut accuracy in tuning (Section 5.2).
+index at this data size. Stricter banding cut accuracy in tuning (Section 5.2). It also moves far more
+data: 10,848.6 MB of shuffle at 100% of the users, where exact kNN shuffles almost nothing (Section 9.5).
 
 For Monte Carlo PPR, the top 10 of the chosen 2,500 walkers overlaps the exact PPR top 10 by 0.8732 (raw scores), with NDCG@10 0.0797 against 0.0802 for exact PPR on the same 2,000 users (Section 6.6). At every W tested the walks were faster than the exact computation (1.86 s per 1,000 users at W = 2,500 against 152.68 s for exact PPR).
+At the chosen W the walks are about 80 times faster than the exact computation on the same core; for
+all 130,411 evaluated users of `user_time` the exact scores would take roughly 5.5 hours on one core,
+the walks about 4 minutes. Unlike LSH, the PPR approximation therefore saves time, at the price of
+about one movie in eight in the top 10 (overlap 0.8732).
 
 **RQ3: How do the methods scale?** On one machine (10 CPUs, Apple Silicon, 4 cores used), going from
 50% to 100% of users roughly doubles the time of ALS (190.82 s → 385.66 s), while exact kNN
@@ -973,7 +979,9 @@ the users. Peak JVM heap at 100% of the users ranges from 2.40 GB (PPR) to 13.57
 
 **Overall.** ALS gives the best accuracy at a run time that grows in proportion to the data. Exact kNN
 is the fastest of the accurate methods at this data size, but its cost grows fastest with more users.
-LSH matches its accuracy but, with these settings, not its speed.
+LSH matches its accuracy but, with these settings, not its speed. Monte Carlo PPR is the approximation that
+pays off: close to exact PPR (Section 6.6) at a small fraction of its cost, although PPR as a method stays
+below kNN and ALS in accuracy.
 
 **Limitations.** All runs use Spark in local mode on single laptops, so memory, not the cluster, is the
 limit (LSH needed a 14 GB heap). Test-run times come from different machines and are not compared; only
