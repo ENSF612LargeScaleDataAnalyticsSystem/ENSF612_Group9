@@ -1,68 +1,126 @@
-# Scalable top-10 movie recommendation on MovieLens 20M
+# Scalable Top-10 Movie Recommendation on MovieLens 20M: Exact Methods against MinHash-LSH and Monte Carlo PageRank on Spark
 
-ENSF 612, Group 9
+ENSF 612 L01, Engineering Large-Scale Data Analytics Systems, Fall 2026 · Group 9
+Department of Electrical and Software Engineering, Schulich School of Engineering, University of Calgary
+
+| Member | UCID |
+|---|---|
+| Vineeth Donthamsetty | 30332178 |
+| Godfred Nanoa | 30328912 |
+| Iruobe Akpatason | 30336389 |
+| Ravan Maharramli | 30326649 |
+
+Source code and all result files: <https://github.com/ENSF612LargeScaleDataAnalyticsSystem/ENSF612_Group9>
+
+## Abstract
+
+We recommend ten unseen movies to every user of MovieLens 20M (20,000,263 ratings by 138,493 users on
+26,744 rated movies) and ask what the course's approximation techniques buy at this scale. Five methods are
+implemented on Apache Spark 4.0.1: a popularity baseline, exact user-kNN, MinHash-LSH user-kNN, Monte Carlo
+personalized PageRank (PPR) on the user–movie like graph, and implicit-feedback ALS from Spark MLlib. All
+methods share one pipeline: the same cleaning, two time-ordered splits (`user_time`, per-user hold-out;
+`global_time`, one global cut-off), tuning on a 10% user sample, one test run per method and split,
+Precision/Recall/NDCG@10 with 95% bootstrap intervals and paired bootstrap comparisons. ALS is the most
+accurate method (test NDCG@10 0.1474 on `user_time`, against 0.1367 for exact kNN and 0.0806 for
+popularity), and the ranking ALS > kNN ≈ LSH > PPR > popularity is the same on both splits. MinHash-LSH
+recovers 0.9164 of the exact top-100 neighbours and ties exact kNN in accuracy, but with the banding that
+tuning required it is slower at every data size (535.49 s against 132.33 s at 100% of the users) and its
+fitted growth (users^1.75) gives no break-even size. Monte Carlo PPR, in contrast, overlaps exact PPR's
+top 10 by 0.8732 at about 80 times less computation. Exact kNN grows close to the square of the users,
+while ALS and PPR grow about linearly.
 
 ## 1. Introduction
 
-We compare five ways to recommend 10 movies to every user of MovieLens 20M (20,000,263 ratings by
-138,493 users on 26,744 movies) [6], [7], all implemented on Apache Spark 4.0.1 (PySpark, local
-mode) [10]:
+**Application and motivation.** Recommendations shape much of what people watch: Netflix reports that its
+recommender influences about 80% of the hours streamed and saves it more than $1B a year [1]. Simple methods
+remain hard to beat: when recent neural recommenders were re-run carefully, most lost to well-tuned
+nearest-neighbour or graph-based baselines [2]. The difficulty is scale. A user-based neighbourhood method
+compares users with each other, up to 9.59 billion pairs on MovieLens 20M, and a random-walk method needs one
+personalized PageRank vector per user, 138,493 of them here. Both costs grow faster than the data. The course
+offers two remedies for exactly these problems, MinHash with locality-sensitive hashing for similarity search
+[5], [11], [12] and Monte Carlo estimation of PageRank [4], and this project measures what they cost and save
+on a real data set, on Spark.
 
-- **popularity**, the baseline: the most liked movies the user has not rated;
-- **exact user-kNN**: movies liked by the 100 most similar users;
-- **MinHash-LSH**: the same as kNN, but neighbours are found approximately with MinHash and banding
-  [5], [11], [12];
-- **Monte Carlo Personalized PageRank (PPR)**: random walks on the user–movie like graph [4], [13], [14];
-- **ALS**: implicit-feedback matrix factorisation with Spark MLlib [15], [16].
+**Problem.** For every user, recommend the ten movies they have not rated that they are most likely to like
+(rate 4.0 or more) in their next, held-out ratings.
 
-Personalised recommendation is worth a great deal at scale [1], and recent work found that simple
-neighbourhood methods remain hard to beat [2]; neighbourhood methods have also long been run on
-distributed systems [3]. Exact neighbourhood and graph methods, however, grow quickly with the number of
-users, which is why we compare them with the approximations taught in the course.
+**Research questions** (from our proposal):
 
-A rating of 4.0 or more counts as a like. Each method except popularity (which has no parameters) is
-tuned on the validation stage of a 10% user sample. Every method is then tested once on two
-time-ordered splits: `user_time` (each user's latest ratings are held
-out) and `global_time` (everything after one date is held out).
+- **RQ1 (quality).** Which of the five methods produces the best top-10 lists on a time-based hold-out, and
+  does the ranking change on a split with one global cut-off date?
+- **RQ2 (approximation).** How much neighbour recall and NDCG@10 do MinHash-LSH and Monte Carlo PPR lose
+  against exact computation, for different signature lengths, bandings (b, r) and numbers of walks, and how
+  much wall-clock time and shuffle volume do they actually save?
+- **RQ3 (scalability).** How do run time, memory and shuffle volume grow from 10% to 100% of the users and
+  from 1 to 4 cores, and at what size does each approximation become cheaper than its exact counterpart?
 
-**Research questions**
+**Expected outcome.** The proposal expected the learned and neighbourhood methods to beat popularity, the
+approximations to lose little accuracy, and the approximations to become cheaper than exact computation as
+the data grows.
 
-These are the research questions of our proposal:
+**Contributions.**
 
-- **RQ1 (quality).** Which of the five methods produces the best top-10 lists on a time-based
-  hold-out, and does the ranking of the methods change on a split with one global cut-off date?
-- **RQ2 (approximation).** How much neighbour recall and NDCG@10 do MinHash-LSH and Monte Carlo PPR
-  lose against exact computation, for different signature lengths, bandings (b, r) and numbers of
-  walks, and how much wall-clock time and shuffle volume do they actually save?
-- **RQ3 (scalability).** How do run time, memory and shuffle volume grow from 10% to 100% of the users
-  and from 1 to 4 cores, and at what size does each approximation become cheaper than its exact
-  counterpart?
+1. A reproducible Spark pipeline for MovieLens 20M: data checks and cleaning, two leakage-aware time splits,
+   nested user samples, and one evaluation shared by all methods, whose results do not depend on the number
+   of cores.
+2. Implementations of exact user-kNN, MinHash-LSH user-kNN and Monte Carlo PPR on Spark, plus ALS from MLlib
+   with our own exact top-k scoring, each tuned on validation data and tested once.
+3. A measurement of both approximations against their exact counterparts: neighbour recall and paired NDCG
+   for LSH, overlap with exact PPR (computed exactly by power iteration) for Monte Carlo PPR.
+4. A scalability study on one machine: time against data size and cores, fitted growth exponents and
+   break-even sizes, shuffle volume and memory.
 
-Section 2 describes the data and the splits, Section 3 the evaluation protocol, Sections 4–7 the four
-methods, Section 8 the paired comparisons between them, Section 9 the scalability runs, and Section 10
-answers the research questions.
+Section 2 reviews related work, Section 3 the data, Section 4 the methods, Section 5 the implementation,
+Section 6 the experimental design, Section 7 the results, Section 8 discusses them, Section 9 concludes and
+Section 10 lists each member's contribution. Tuning tables and further details are in the appendices.
 
-### 1.1 Changes from the proposal
+## 2. Related Work
 
-The project follows the proposal, with these changes, each made for a reason we can state:
+**Neighbourhood methods and strong baselines.** User-based collaborative filtering scores an item by the
+votes of similar users. Ferrari Dacrema et al. [2] showed that such simple, well-tuned neighbourhood and
+graph methods often beat recent neural recommenders, which is why we compare classic methods rather than
+deep models, and why we keep a popularity baseline that every method must beat.
 
-| Proposal | What we did | Why |
-|---|---|---|
-| Jaccard similarity, top-20 neighbours | Cosine similarity, 100 neighbours for kNN and LSH; LSH neighbour recall measured on the top 100 | Chosen on validation (Sections 4.2, 5.2); recall is measured on the neighbours the method actually uses |
-| Bandings from 32 × 4 to 85 × 3 (proposal Table 1) | 256 hashes in 128 bands (2 values per band) | With 4 values per band (threshold about 0.42) the pilot found about 24 candidates per user and none for 4,027 users; the grid moved to 1–2 values per band |
-| PPR: restart 0.15, W walks, ranked by visit counts, walks as Spark map-reduce rounds | Restart 0.3, 2,500 walkers, 20 steps, popularity penalty (beta 0.3) and a minimum of 10 visits; walks of each batch of 256 users simulated with numpy inside Spark tasks | Plain visit counts were below popularity on the pilot (Section 6.5); batches keep the walks on the workers without a shuffle per step and make them independent of the core count |
-| Random 10/25/50/100% user samples | Samples by a hash of the user id | The samples are nested and the same on every machine (Section 2.4) |
-| Exact PPR for 2,000 users as ground truth | Done on the validation stage of `user_time` (Section 6.6) | As planned |
+**Similarity search at scale.** MinHash estimates the Jaccard similarity of two sets from short signatures
+[11], and banding the signatures (locality-sensitive hashing) turns all-pairs comparison into bucket
+lookups whose candidate probability is an S-curve in the similarity [12], [5]. Google News used MinHash
+clustering on MapReduce to personalise news for millions of users without comparing every pair [3]. Our LSH
+method follows this design: map tasks compute signatures and band keys, Spark groups users by bucket, and
+only candidates are scored exactly.
 
-## 2. Data and splits
+**Random walks for recommendation.** PageRank [13] ranks graph nodes by the stationary distribution of a
+random walk; personalising the restart turns it into a recommender, as in ItemRank [14]. RP3beta [18] showed
+that dividing walk-based scores by item popularity raises both accuracy and diversity; our PPR uses the same
+penalty. Computing one exact PPR vector per user is expensive, and Bahmani et al. [4] estimated many PPR
+vectors on MapReduce by Monte Carlo walks. We use the same estimator and, unlike most applications,
+measure it against exact PPR computed by power iteration.
 
-All numbers below are copied from `reports/data_profile.md`, `reports/data_quality.json` and
-`reports/split_stats.md`, which `src/ingest.py` and `src/split.py` write. Before a member runs the test
-stage, `tools/member.py check` confirms that their machine produced identical copies of these files.
+**Matrix factorisation.** Hu, Koren and Volinsky [15] adapted matrix factorisation to implicit feedback with
+confidence weights and alternating least squares. Spark MLlib provides a distributed implementation [16]; we
+use it as the learned reference that the neighbourhood and graph methods are compared with.
 
-### 2.1 Dataset
+**Evaluation methodology.** Random or per-user splits can leak future information into training [8], and
+the choice of split changes the ranking of methods [9]. We therefore report a per-user time split and a split
+with one global cut-off date, and check whether the ranking changes. NDCG [17] is the main metric.
 
-We use MovieLens 20M (GroupLens). After cleaning:
+**How this project differs.** Earlier work typically studies one of these techniques at a time, on a cluster.
+We compare exact and approximate versions of two families side by side, on the same data and evaluation, and
+measure accuracy, neighbour recall, time, shuffle and memory together, on Spark in local mode, to find where
+each approximation starts to pay off.
+
+## 3. Dataset and Data Preparation
+
+### 3.1 Source and format
+
+MovieLens 20M is the stable benchmark release of GroupLens [6], [7]. It comes as six UTF-8 CSV files; we
+use `ratings.csv` (userId, movieId, rating from 0.5 to 5.0 in half-star steps, Unix timestamp) and
+`movies.csv` (movieId, title with year, pipe-separated genres). Users were selected at random among those
+with at least 20 ratings, and no demographic data is included [7]. The data is used under the GroupLens
+README; every member downloads it directly and it is never committed.
+
+### 3.2 Size and profile
+
+`src/ingest.py` profiles the data and writes `reports/data_profile.md`:
 
 | Statistic | Value |
 |---|---|
@@ -71,517 +129,278 @@ We use MovieLens 20M (GroupLens). After cleaning:
 | Movies with at least one rating (in `movies.csv`) | 26,744 (27,278) |
 | Density of the user–movie matrix | 0.54% |
 | Likes (rating ≥ 4.0) | 9,995,410 (49.98%) |
-| Period | 1995-01-09 11:46:44 to 2015-03-31 06:40:02 UTC |
+| Period | 1995-01-09 to 2015-03-31 |
 | Ratings per user: min / median / mean / p99 / max | 20 / 68 / 144.41 / 1114 / 9254 |
-| Likes per user: min / median / mean / p99 / max | 0 / 37 / 72.17 / 492 / 3177 |
 | Ratings per movie: min / median / mean / p99 / max | 1 / 18 / 747.84 / 14396 / 67310 |
-| Users without any like | 206 |
-| Movies without any like / with only 1 rating | 6024 / 3972 |
 | Share of ratings on the top 1% of movies | 33.48% |
 | Ratings that share a timestamp with another rating of the same user | 30.9% |
 
-The data is very sparse and skewed: a third of all ratings go to the top 1% of movies, while the
-median movie has 18 ratings.
+The data is very sparse and skewed: a third of all ratings go to the top 1% of movies while the median movie
+has 18 ratings. A dense user–movie matrix would hold 3.8 billion cells, so every structure in the pipeline
+is sparse.
 
-### 2.2 Cleaning
+### 3.3 Data quality and cleaning
 
-`src/ingest.py` applies five rules and counts every one of them in `reports/data_quality.json`, even
-when the count is 0:
+`src/ingest.py` applies five rules and counts each one in `reports/data_quality.json`, even when the count
+is zero: missing or unparseable fields, ratings outside 0.5–5.0 or off the half-star grid, timestamps
+outside the collection period, `movieId` missing from `movies.csv`, and duplicate user–movie pairs (latest
+kept). On MovieLens 20M every rule removed 0 rows (20,000,263 raw and clean); the rules stay in the
+pipeline so the data is checked, not assumed clean. 534 movies in `movies.csv` have no rating and get no
+dense id; 23 titles have no year and 246 movies have no genres, which does not matter because no method
+uses titles or genres. Users and movies are never removed for being unusual.
 
-| Rule | Rows removed |
-|---|---|
-| 1. Missing or unparseable field (userId / movieId / rating / timestamp) | missing 0 / 0 / 0 / 0, unparseable 0 / 0 / 0 / 0 |
-| 2. Rating outside 0.5–5.0 or not on a half-star step | 0 |
-| 3. Timestamp outside the collection period (9 Jan 1995 – 31 Mar 2015) | 0 |
-| 4. `movieId` not in `movies.csv` | 0 |
-| 5. Duplicate user–movie pair (latest rating kept) | 0 |
+**Transformation.** User and movie ids are mapped to dense integers from 0, timestamps are kept as Unix
+seconds, and every table is written as Parquet with the columns `user, item, rating, ts, like`. A rating of
+4.0 or more is a **like**: likes are the positive signal of every method and of the evaluation. 206 users
+have no like at all; they still receive recommendations (popular movies) and are evaluated like everyone
+else.
 
-No rating was removed: 20,000,263 rows raw and 20,000,263 clean. The rules stay in the pipeline so the
-data is checked, not assumed clean. In `movies.csv`, 534 movies have no rating and get no dense id, so
-no method can recommend them. 23 titles have no year and 246 movies have no genres; both are kept,
-because the methods use neither titles nor genres. Users and movies are never removed for being
-unusual, for example for having very many ratings.
+**Limitations and biases.** MovieLens users are volunteers who choose what to rate, so popular films are
+over-represented and missing ratings are not random. Timestamps record when a rating was entered, not when
+the film was watched, and 30.9% of ratings share a timestamp with another rating of the same user (bulk
+rating sessions), so any time split only approximates a live service.
 
-### 2.3 Likes
+### 3.4 Splits
 
-A rating of 4.0 or more is a **like**. Likes are the positive signal for every method and for the
-evaluation: a recommended movie is a hit if the user liked it in the target part.
+**`user_time`.** Each user's ratings are sorted by (timestamp, movie id); the last ceil(20%) are test and the
+ceil(10%) before them validation. The movie id makes ties deterministic. Every user keeps at least 13
+training ratings.
 
-### 2.4 Splits
+**`global_time`.** Two cut-offs shared by all users: the latest 20% of all ratings are test (from
+2009-10-20) and the 10% before them validation (from 2007-12-08). This is the strict, realistic setting, but
+it can evaluate only returning users on movies seen in training: at the test stage 5,542 users are
+evaluable, 26,027 users in the test period have no training history, and 300,783 of the 1,998,613 test
+likes are on movies absent from training, which caps recall.
 
-**`user_time`.** Each user's ratings are sorted by (timestamp, movie id). The last ceil(20% of n)
-ratings are test and the ceil(10% of n) before them are validation. The movie id breaks ties, because
-30.9% of ratings share a timestamp with another rating of the same user; this makes the split
-deterministic. Every user has at least 20 ratings, so every user keeps at least 13 for training.
+**Samples.** `user_time_10pct` and `global_time_10pct` keep 10% of the users. Users are chosen by a hash of
+their id, not by a random draw, so the 10%, 25% and 50% samples are nested and identical on every machine.
+All tuning used the validation stage of `user_time_10pct`.
 
-**`global_time`.** Two timestamp cutoffs shared by all users: the latest 20% of all ratings are test
-and the 10% before them are validation. Validation starts at 2007-12-08 01:20:38 UTC and test at
-2009-10-20 07:33:43 UTC.
+| Split | Train ratings | Evaluable users (val / test) |
+|---|---|---|
+| user_time | 13,883,097 | 130,411 / 135,599 |
+| user_time_10pct | 1,382,688 | 12,905 / 13,385 |
+| global_time | 14,000,184 | 4,538 / 5,542 |
 
-**Pilot samples.** `user_time_10pct` and `global_time_10pct` keep 10% of users with all their ratings.
-Users are picked by a hash of their id, not by a random draw, so the samples are nested
-(10% ⊂ 25% ⊂ 50%) and the same on every machine. All tuning used the validation stage of
-`user_time_10pct`.
+Full per-part statistics are in Appendix B.
 
-| Split | Part | Ratings | Share | Users | Movies | Likes |
-|---|---|---|---|---|---|---|
-| user_time | train | 13,883,097 | 69.41% | 138,493 | 20,656 | 7,087,069 |
-| | val | 2,062,715 | 10.31% | 138,493 | 18,513 | 983,364 |
-| | test | 4,054,451 | 20.27% | 138,493 | 25,139 | 1,924,977 |
-| user_time_10pct | train | 1,382,688 | 69.42% | 13,671 | 13,616 | 705,219 |
-| | val | 205,444 | 10.31% | 13,671 | 10,924 | 97,529 |
-| | test | 403,760 | 20.27% | 13,671 | 14,654 | 190,945 |
-| global_time | train | 14,000,184 | 70.0% | 100,793 | 9,696 | 7,047,751 |
-| | val | 2,000,026 | 10.0% | 16,322 | 12,126 | 949,046 |
-| | test | 4,000,053 | 20.0% | 31,670 | 26,349 | 1,998,613 |
-| global_time_10pct | train | 1,400,308 | 70.3% | 9,936 | 9,127 | 704,545 |
-| | val | 193,560 | 9.72% | 1,605 | 8,229 | 93,261 |
-| | test | 398,024 | 19.98% | 3,168 | 14,557 | 195,887 |
+## 4. Methodology
 
-Who can be evaluated at each stage (a user needs at least one liked target movie and at least one
-training rating):
+### 4.1 Common structure
 
-| Split | Stage | Evaluable users | Target users without history | Target likes on movies unseen in training |
-|---|---|---|---|---|
-| user_time | val | 130,411 | 0 | 453 of 983,364 |
-| user_time | test | 135,599 | 0 | 1,782 of 1,924,977 |
-| user_time_10pct | val | 12,905 | 0 | 284 of 97,529 |
-| user_time_10pct | test | 13,385 | 0 | 985 of 190,945 |
-| global_time | val | 4,538 | 11,673 | 93,714 of 949,046 |
-| global_time | test | 5,542 | 26,027 | 300,783 of 1,998,613 |
-| global_time_10pct | val | 447 | 1,146 | 9,525 of 93,261 |
-| global_time_10pct | test | 568 | 2,589 | 31,287 of 195,887 |
+Every method is a function `recommend(spark, train, k=10, **params)` that receives the training ratings
+only and returns, for every user, ten distinct movies the user has not rated in training. All methods except
+popularity use the same three sparse indexes built from the training likes (user → rated movies, user →
+liked movies, movie → users who liked it), score users in fixed batches of 256, and fill a list shorter than
+ten with the most popular unseen movies. Table 1 summarises the methods and their costs.
 
-### 2.5 What `global_time` can and cannot evaluate
+*Table 1. Methods and their main cost (N users, L likes, d = likes of a movie, W walkers, S steps, r rank).*
 
-`global_time` is the realistic setting: the model is trained on the past and judged on the future
-for everyone at once. But it can judge only part of that future:
-
-- At the test stage only **5,542 users** are evaluated, against 135,599 on `user_time`.
-- **26,027 users** who rate in the test period have no training history. They are new users, and no
-  method here can recommend for them, so they are left out of the evaluation.
-- **300,783 of the 1,998,613 test likes** are on movies that do not appear in training (new movies).
-  No method can recommend a movie it has never seen, so these likes can never be hits. This caps
-  recall on `global_time`.
-
-So `global_time` measures how well a method serves returning users on movies it already knows. It does
-not measure cold start, for new users or new movies. Its intervals are also much wider than on
-`user_time`, because it evaluates far fewer users.
-
-## 3. Evaluation protocol
-
-All five methods (popularity, exact user-kNN, MinHash-LSH, Monte Carlo PPR and ALS) go through the
-same script, `src/run.py`. It loads one split and stage, calls the method's `recommend` function with
-the training data only, writes the top-10 lists, and scores them with `src/evaluate.py`. So every
-method is scored by the same code on the same users.
-
-### 3.1 Stages
-
-Each split (`user_time`, `global_time` and their 10% pilots) has three time-ordered parts: train,
-validation and test.
-
-- **Validation stage** (`--stage val`): the method trains on the train part and is scored on the
-  validation part. All tuning was done here, on the 10% pilot of `user_time` (`user_time_10pct`).
-- **Test stage** (`--stage test`): the method trains on train + validation and is scored on the test
-  part. It runs once per method and split, with the parameters fixed in `tools/chosen.json`.
-  `tools/member.py test` reads the parameters from that file, accepts none from the command line,
-  and refuses to run a split again once it has a `metrics.json`.
-
-### 3.2 Who is evaluated
-
-A user is evaluated if they have at least one liked item (rating ≥ 4.0) in the target part and at
-least one rating in the training part. The relevant items of a user are the items they liked in the
-target part. An evaluated user who gets no list from a method still counts, with 0 for every metric,
-so a method cannot gain by skipping hard users. Before scoring, the evaluation rejects lists with
-duplicate items, duplicate ranks or ranks outside 1..10. It warns if a method recommends a movie the
-user already rated in training. Such an item can never be a hit.
-
-### 3.3 Metrics
-
-All metrics use k = 10 and binary relevance (an item is a hit if the user liked it in the target part).
-For one user with list positions r = 1..10 and R liked target items:
-
-- **Precision@10** = hits / 10.
-- **Recall@10** = hits / R.
-- **NDCG@10** = DCG / IDCG [17], with DCG = Σ over hits of 1 / log2(r + 1), and IDCG the same sum for
-  the first min(R, 10) positions (a perfect list).
-
-Each is averaged over all evaluated users.
-
-- **Coverage** = number of distinct items recommended to anyone / number of distinct items in the
-  training part.
-
-### 3.4 Uncertainty
-
-Each metric has a 95% interval from a percentile bootstrap: 1,000 resamples of the evaluated users
-with replacement, with a fixed seed (612). Users are sorted by id first, so every machine draws the
-same resamples. Per-user values are saved in `results/<method>/<split>/<stage>/per_user`.
-
-To compare two methods, `tools/compare.py` uses a **paired bootstrap**. It joins the per-user values
-of both runs on the user id. It refuses to run if the two runs did not evaluate exactly the same
-users. Then it resamples users 1,000 times, using the same resample for both methods. It reports the
-mean difference A − B, its 95% interval, and the share of resamples where A is not better than B (a
-one-sided p-value). Pairing removes the variation between users that both methods share, so the
-interval for a difference is narrower than two separate intervals would suggest.
-
-### 3.5 Why there is no leakage
-
-Offline evaluation of recommenders easily lets future information into training [8], [9]. Our
-safeguards:
-
-- A method receives only the training DataFrame. The method contract forbids reading the
-  validation or test files, and `src/run.py` passes nothing else.
-- The splits are ordered in time. In `global_time`, two global timestamp cutoffs separate the parts,
-  so a method never trains on a rating made after any rating it is scored on. In `user_time`, each
-  user's last 20% of ratings are test and the 10% before them are validation. No user's own later
-  ratings reach training, but the cutoff differs per user, so training can hold other users'
-  ratings made after this user's test ratings. Only `global_time` gives a strict time order across
-  users.
-- Methods never recommend an item the user already rated in training.
-- Tuning used only the validation stage of the 10% pilot. Parameters were fixed in
-  `tools/chosen.json` before any test run, and each test split runs only once.
-- The popularity and kNN test runs were made on the group's reference machine (Windows, 4 CPUs).
-  The LSH, PPR and ALS test runs were made on Apple Silicon (macOS 27.0.1, 10 CPUs), as recorded in
-  each run's `metrics.json`. No test run started before two checks on its machine.
-  `tools/member.py check` confirms that the machine's data profile and split statistics are identical
-  to the group's copies, so every machine scores on the same rows. `tools/member.py pilot` then
-  re-runs the chosen parameters on the pilot's validation stage and must reproduce the group's
-  metrics (within 0.002 per metric, with the same evaluated users).
-
-### 3.6 Reproducibility
-
-Results do not depend on the number of cores or on Spark's partitioning:
-
-- Users are scored in fixed batches of 256 sorted user ids, so batches depend only on the ids.
-- Every top-n selection breaks ties by the lower id (`best_idx`), so ties never depend on input order.
-- Random parts are seeded (seed 612). PPR seeds its random walks per batch with (seed, first user of
-  the batch). LSH draws its hash functions from the seed. ALS uses the seed and fixed numbers of user
-  and item blocks, so its factors do not change with the number of cores.
-- Samples are chosen by a hash of the user id, not by a random draw, so they are nested
-  (10% ⊂ 25% ⊂ 50%) and the same on every machine.
-- The bootstrap sorts users by id before resampling.
-
-## 4. Exact user-kNN
-
-### 4.1 Method
-
-Exact user-kNN recommends to each user the movies liked by the users whose taste is closest to theirs.
-It is the reference that MinHash-LSH approximates, so it uses the same scoring.
-
-For a user *u* with the set of liked movies *A_u* (ratings of 4.0 or more in the training part):
-
-1. **Similarity to every other user.** For each movie in *A_u* we look up the users who liked it and count
-   how often each user appears. That count is the overlap |A_u ∩ A_v| for every other user *v* at once.
-   The similarity is cosine on the liked sets, |A_u ∩ A_v| / sqrt(|A_u| · |A_v|).
-2. **Neighbours.** Keep the 100 most similar users. Ties go to the lower user id, so the result does not
-   depend on how Spark partitions the data.
-3. **Scores.** The score of a movie is the sum of the similarities of the neighbours who liked it. The 10
-   best-scoring movies the user has not rated are recommended. A user with no likes, or with fewer than
-   10 scored movies, is filled up with the most popular unseen movies.
-
-**Implementation on Spark.** The training ratings are collected once and turned into three compressed
-sparse arrays with numpy: user → rated movies, user → liked movies, movie → users who liked it. The arrays
-are broadcast to all workers. Users are sorted by id and cut into fixed batches of 256, and the batches
-are scored in parallel with `mapPartitions`. Because the batches depend only on the user ids, the
-recommendations are identical for any number of cores.
-
-The cost for one user is the total number of likes of the movies that user liked. Summed over users this
-is the sum over movies of (number of likes)², so popular movies dominate the run time.
-
-### 4.2 Parameters and tuning
-
-Tuning used only the validation stage of the 10% pilot sample (`user_time_10pct`, 12,905 evaluated
-users). The test part was not read.
-
-| Configuration | P@10 | R@10 | NDCG@10 | Coverage | Recommend s |
-|---|---|---|---|---|---|
-| **100 neighbours, cosine (chosen)** | 0.0638 | 0.1310 | 0.1081 | 0.0533 | 74 |
-| 100 neighbours, Jaccard | 0.0628 | 0.1290 | 0.1065 | 0.0558 | 54 |
-| 50 neighbours, Jaccard (default) | 0.0624 | 0.1275 | 0.1057 | 0.0792 | 57 |
-| 200 neighbours, Jaccard | 0.0618 | 0.1266 | 0.1050 | 0.0420 | 56 |
-| 20 neighbours, Jaccard | 0.0605 | 0.1222 | 0.1021 | 0.1196 | 80 |
-
-Accuracy changes little between 50 and 200 neighbours and is best at 100. Cosine is slightly better than
-Jaccard at 100 neighbours. Fewer neighbours give more varied lists: coverage falls from 0.120 with 20
-neighbours to 0.042 with 200.
-
-### 4.3 Test results
-
-One run per split, with the chosen configuration, training on train + validation.
-
-| Split | Method | P@10 [95% CI] | R@10 [95% CI] | NDCG@10 [95% CI] | Coverage | Users | Recommend s |
-|---|---|---|---|---|---|---|---|
-| user_time | kNN | 0.1034 [0.1027, 0.1041] | 0.1140 [0.1131, 0.1151] | 0.1367 [0.1357, 0.1377] | 0.0875 | 135,599 | 1,634 |
-| user_time | popularity | 0.0619 [0.0613, 0.0624] | 0.0619 [0.0612, 0.0626] | 0.0806 [0.0798, 0.0814] | 0.0129 | 135,599 | 38 |
-| global_time | kNN | 0.1898 [0.1835, 0.1959] | 0.0503 [0.0481, 0.0528] | 0.2130 [0.2061, 0.2196] | 0.1390 | 5,542 | 1,428 |
-| global_time | popularity | 0.1262 [0.1212, 0.1313] | 0.0337 [0.0318, 0.0362] | 0.1438 [0.1383, 0.1494] | 0.0267 | 5,542 | 36 |
-
-All four runs were made on the same machine: 4 CPUs, Windows, Spark 4.0.1 in local mode with all cores
-and an 8 GB driver heap.
-
-### 4.4 Comparison with the baseline
-
-Paired bootstrap over users (1,000 resamples, the same resample for both methods), kNN minus popularity:
-
-| Split | Metric | Difference | 95% interval |
+| Method | Signal | Main cost | Chosen parameters |
 |---|---|---|---|
-| user_time | Precision@10 | +0.0415 | [+0.0409, +0.0421] |
-| user_time | Recall@10 | +0.0521 | [+0.0511, +0.0530] |
-| user_time | NDCG@10 | +0.0561 | [+0.0552, +0.0570] |
-| global_time | Precision@10 | +0.0636 | [+0.0599, +0.0672] |
-| global_time | Recall@10 | +0.0166 | [+0.0146, +0.0187] |
-| global_time | NDCG@10 | +0.0692 | [+0.0648, +0.0733] |
+| Popularity | most-liked unseen movies | O(L) | none |
+| Exact user-kNN | cosine on liked sets, 100 neighbours | Σ over movies of d² | 100 neighbours, cosine |
+| MinHash-LSH user-kNN | as kNN, neighbours from LSH candidates | N · n hashes + candidates | 256 hashes, 128 bands, cosine, 100 neighbours |
+| Monte Carlo PPR | visit counts of random walks | N · W · S | alpha 0.3, 2,500 walkers, 20 steps, beta 0.3, min_visits 10 |
+| ALS (MLlib) | implicit matrix factorisation | iterations · (L r² + (N + M) r³) | rank 128, alpha 1.0, reg 0.1 |
 
-kNN is better than popularity on every metric and both splits, and no interval comes close to zero. On
-`user_time`, NDCG@10 rises from 0.0806 to 0.1367. kNN also recommends a much wider part of the catalogue:
-coverage is 0.0875 against 0.0129 on `user_time`.
+### 4.2 Popularity
 
-The price is time. Producing the recommendations took 1,634 s on `user_time` against 38 s for popularity
-on the same machine, about 43 times longer.
+Movies are ranked by their number of likes in training (ties by number of ratings, then id); each user gets
+the ten best they have not rated. Every other method must beat it.
 
-### 4.5 Limitations
+### 4.3 Exact user-kNN
 
-- **Cost grows faster than the data.** The work is the sum over movies of (likes)², so doubling the number
-  of users roughly quadruples it. This is the reason for comparing against MinHash-LSH.
-- **Memory.** The whole training index is held in the driver and copied to every worker, so the method is
-  limited by the memory of one machine.
-- **New users and new movies.** A user with no likes only receives popular movies, and a movie nobody in
-  training liked can never be recommended.
-- **`global_time` evaluates few users.** Only 5,542 users have both training history and a liked movie
-  after the cut-off, so its intervals are about seven times wider than on `user_time`.
+For a user u with liked set A_u, the method walks the movie → likers index for every movie in A_u and counts
+how often each other user appears, which gives |A_u ∩ A_v| for all v at once. The similarity is cosine on the
+liked sets, |A_u ∩ A_v| / sqrt(|A_u| · |A_v|), and the 100 most similar users are kept (ties to the lower id).
+A movie's score is the sum of the similarities of the neighbours who liked it. The cost per user is the total
+number of likes of the movies the user liked, so summed over users it is the sum over movies of (likes)²:
+popular movies dominate, and the cost grows close to the square of the number of users.
 
-## 5. MinHash-LSH user-kNN
+### 4.4 MinHash-LSH user-kNN
 
-### 5.1 Method
+LSH replaces only the neighbour search; scoring is the same code as exact kNN, so any accuracy difference
+comes from the neighbours alone.
 
-LSH replaces the exact neighbour search of user-kNN with an approximate one [5], [11], [12]. Everything after the
-neighbour search is the same as in exact kNN (`src/methods/knn.py`), so any difference between the
-two methods comes from the neighbours alone.
+1. **Signatures.** Each liked set gets n values h_j = min over x in A_u of (a_j x + b_j) mod (2^31 − 1), with
+   a_j, b_j drawn from seed 612. Two users agree on one value with probability equal to their Jaccard
+   similarity [11].
+2. **Banding.** The signature is cut into b bands of r = n / b values; users who share a bucket in at least
+   one band become candidates. A pair with Jaccard similarity s is found with probability
+   1 − (1 − s^r)^b [5], [12].
+3. **Bucket cap.** Buckets with more than 2,000 users are skipped; they come from very popular movies and
+   would bring back the quadratic cost.
+4. **Verification.** The exact similarity of every candidate is computed and the 100 best are kept.
 
-The implementation (`src/methods/lsh.py`) works on each user's set of liked movies (rating ≥ 4.0)
-in the training part:
+The proposal's bandings (4 values per band, threshold about 0.42) found too few candidates, because true
+neighbours in this data have low Jaccard similarity (Appendix A.2): tuning moved to 2 values per band, 256
+hashes in 128 bands.
 
-1. **MinHash signatures.** Each user's liked set gets a signature of `n_hashes` values. Value j is the
-   minimum of h_j(x) = (a_j·x + b_j) mod (2^31 − 1) over the liked movies x. The a_j and b_j come from
-   a generator seeded with 612. Signatures are computed in fixed batches of 256 users on Spark
-   workers, from the training index broadcast by `src/methods/_shared.py`.
-2. **Banding.** The signature is cut into `bands` bands of r = n_hashes / bands values. Each band is
-   hashed into one key. Spark groups users by (band, key), and users that share a bucket in at least
-   one band become candidates for each other. A pair with Jaccard similarity s is found with
-   probability 1 − (1 − s^r)^bands.
-3. **Big buckets are skipped.** Buckets with more than `max_bucket` users (default 2,000) are left
-   out. They come from very popular movies and would bring back the quadratic cost LSH is meant to
-   avoid.
-4. **Exact verification.** For every candidate the exact similarity (cosine or Jaccard on liked sets)
-   is computed, and the `n_neighbours` best are kept (ties go to the lower user id).
-5. **Scoring as in kNN.** A movie's score is the sum of the similarities of the neighbours who liked
-   it. The 10 best movies the user has not rated are recommended. Users with no like or too few
-   scored movies are filled with the most popular unseen movies.
+### 4.5 Monte Carlo personalized PageRank
 
-### 5.2 Parameters and tuning
+Users and movies are the nodes of a bipartite graph with an edge for every training like. For a user u,
+W walkers start at u; at each of S = 20 steps a walker moves to a random movie its current user liked (the
+visit is counted), then to a random user who liked that movie, and with probability alpha = 0.3 jumps back to
+u. Visit counts estimate u's PPR scores [4], [13]. Two rules from tuning make the scores useful: movies with
+fewer than min_visits = 10 visits are dropped as noise, and counts are divided by (likes of the movie)^beta
+with beta = 0.3, the popularity penalty of RP3beta [18].
 
-Tuning used only the validation stage of the 10% pilot (`user_time_10pct`, 12,905 evaluated users).
-Unlisted parameters keep their defaults: n_hashes 128, bands 32, n_neighbours 50, max_bucket 2,000,
-Jaccard similarity. Sorted by NDCG@10. All runs were made on the group's tuning machine.
+**Exact reference.** For RQ2 the expected visit counts of this same walk are computed exactly. With P_UM and
+P_MU the user → movie and movie → user transition matrices, x_0 = e_u and
+x_(t+1) = alpha · e_u + (1 − alpha) · x_t P_UM P_MU, the expected visits are W · Σ_t x_t P_UM over the 20
+steps (`tools/ppr_exact.py`). This is exact PPR for the walk the method simulates, so the overlap of the two
+top-10 lists measures the Monte Carlo error alone.
 
-| Tag | Parameters | P@10 | R@10 | NDCG@10 | Coverage | Recommend (s) |
-|---|---|---|---|---|---|---|
-| **chosen** | **n_hashes 256, bands 128, cosine, n_neighbours 100** | **0.0633** | **0.1295** | **0.1068** | **0.0773** | **152.6** |
-| h64_b64 | n_hashes 64, bands 64 | 0.0624 | 0.1277 | 0.1058 | 0.0800 | 265.56 |
-| h128_b128 | n_hashes 128, bands 128 | 0.0624 | 0.1276 | 0.1057 | 0.0800 | 309.1 |
-| h256_b128 | n_hashes 256, bands 128 | 0.0623 | 0.1265 | 0.1049 | 0.0908 | 156.24 |
-| h128_b64 | n_hashes 128, bands 64 | 0.0614 | 0.1236 | 0.1027 | 0.1028 | 128.35 |
-| h128_b64_mb5000 | n_hashes 128, bands 64, max_bucket 5,000 | 0.0614 | 0.1236 | 0.1027 | 0.1028 | 116.91 |
-| default | (defaults) | 0.0463 | 0.0994 | 0.0801 | 0.1537 | 112.49 |
+### 4.6 ALS
 
-The chosen configuration is fixed in `tools/chosen.json`. Before the test runs, this machine re-ran
-it on the pilot and reproduced the group's NDCG@10 of 0.106837 exactly.
+ALS factorises the user–movie preference matrix into user and movie factors of rank r. We use the
+implicit-feedback model [15] from Spark MLlib [16] on the training likes: alpha sets the confidence of an
+observed like and reg the L2 penalty. MLlib's own `recommendForAllUsers` cannot exclude seen movies, so the
+factors are collected and every user's scores U·Vᵀ are computed in batches with our own top-k, which removes
+all rated movies.
 
-### 5.3 Test results
+### 4.7 Parameter selection and design decisions
 
-Train + validation → test, one run per split, with the chosen parameters.
+Each method was tuned on the validation stage of `user_time_10pct` (12,905 evaluated users) by NDCG@10, from
+defaults by changing one or two parameters at a time; Appendix A lists every configuration tried. The chosen
+values were fixed in `tools/chosen.json` before any test run. Design decisions that differ from the proposal,
+and why:
 
-| Method | Split | P@10 [95% CI] | R@10 [95% CI] | NDCG@10 [95% CI] | Coverage | Evaluated users | Recommend (s) |
-|---|---|---|---|---|---|---|---|
-| LSH | user_time | 0.1033 [0.1025, 0.1040] | 0.1138 [0.1128, 0.1148] | 0.1366 [0.1355, 0.1376] | 0.0879 | 135,599 | 522.59 |
-| Popularity | user_time | 0.0619 [0.0613, 0.0624] | 0.0619 [0.0612, 0.0626] | 0.0806 [0.0798, 0.0814] | 0.0129 | 135,599 | 38.45 |
-| LSH | global_time | 0.1901 [0.1835, 0.1961] | 0.0506 [0.0483, 0.0532] | 0.2125 [0.2054, 0.2190] | 0.1413 | 5,542 | 496.56 |
-| Popularity | global_time | 0.1262 [0.1212, 0.1313] | 0.0337 [0.0318, 0.0362] | 0.1438 [0.1383, 0.1494] | 0.0267 | 5,542 | 35.53 |
+| Proposal | What we did | Why |
+|---|---|---|
+| Jaccard, top-20 neighbours | Cosine, 100 neighbours for kNN and LSH | Best on validation (Appendix A.1) |
+| Bandings from 32 × 4 to 85 × 3 | 256 hashes in 128 bands (2 values per band) | With 4 values per band the pilot found about 24 candidates per user and none for 4,027 users |
+| PPR: restart 0.15, ranked by raw visit counts, walks as map-reduce rounds | Restart 0.3, 2,500 walkers, beta 0.3, min_visits 10; walks of each 256-user batch simulated with numpy inside one Spark task | Raw counts were far below the chosen rules on the pilot (Appendix A.3); batches avoid a shuffle per step and keep results independent of the core count |
+| Random 10/25/50% samples | Samples by a hash of the user id | Nested and identical on every machine |
 
-The LSH runs were made on macOS 27.0.1 (arm64), 10 CPUs, Spark 4.0.1, 14g driver memory, all cores.
-The popularity rows come from the group's runs on Windows 10 (AMD64), 4 CPUs, 8g driver memory.
-Run times from the two machines are not comparable.
+## 5. Implementation
 
-During the test runs LSH reported 12,493.0 candidates per user on average on `user_time` (360 users
-without candidates; 206 buckets with more than 2,000 users skipped), and 13,221.8 on `global_time`
-(142 users without candidates; 165 buckets skipped).
+**Languages and libraries.** Python 3.11, PySpark 4.0.1 (Spark SQL, MLlib ALS) in local mode, NumPy, SciPy
+(sparse matrices for exact PPR), matplotlib for figures and pytest for tests. Apart from Spark, MLlib's ALS
+training and these numerical libraries, the algorithmic code (cleaning, splits, evaluation, bootstrap,
+kNN, MinHash and banding, random walks, exact PPR, ALS scoring and top-k) was written by the group.
 
-### 5.4 Comparison with the baseline
+**Software architecture.** The pipeline is three scripts and one module per method:
 
-Paired bootstrap (1,000 resamples of the same users), LSH − popularity:
+```
+ml-20m CSV  -> src/ingest.py   -> Parquet with dense ids, data profile
+            -> src/split.py    -> user_time, global_time, 10% pilots
+            -> src/run.py      -> src/methods/<name>.recommend(train)
+                               -> top-10 lists
+            -> src/evaluate.py -> per-user metrics, bootstrap CIs
+```
 
-| Split | Users | ΔP@10 [95% CI] | ΔR@10 [95% CI] | ΔNDCG@10 [95% CI] |
-|---|---|---|---|---|
-| user_time | 135,599 | +0.0414 [+0.0408, +0.0421] | +0.0519 [+0.0509, +0.0527] | +0.0560 [+0.0551, +0.0568] |
-| global_time | 5,542 | +0.0639 [+0.0603, +0.0675] | +0.0168 [+0.0147, +0.0190] | +0.0687 [+0.0643, +0.0728] |
+`src/common.py` holds every project rule (like threshold 4.0, test 20%, validation 10%, k = 10, seed 612,
+paths, the shared Spark configuration and the user sampler), so a rule changes in one place for all methods.
+Tools in `tools/` handle the group workflow (identity checks before test runs, single test runs), paired
+comparisons, scalability runs, growth fits, exact PPR, shuffle and memory measurements and the figures.
 
-LSH beats the popularity baseline on every metric on both splits. No interval comes near zero, and
-the share of resamples where LSH was not better is 0.000 in all six cases. On `user_time`, NDCG@10
-rises from 0.0806 to 0.1366, and coverage rises from 0.0129 to 0.0879.
+**Data structures.** `src/methods/_shared.py` collects the training ratings once and builds three
+compressed-sparse-row arrays with NumPy (user → rated movies, user → liked movies, movie → users who liked
+it). They are broadcast to every Spark worker. Users are sorted by id and cut into fixed batches of 256 that
+are scored in parallel with `mapPartitions`. This trades shuffle for memory: kNN, PPR and ALS scoring move
+almost no data between tasks, but each worker holds a copy of the index (Section 7.5).
 
-### 5.5 Approximation quality
+**Determinism.** Batches depend only on user ids; every top-n selection breaks ties by the lower id; LSH
+hash functions, PPR walks (one generator per batch, seeded with (612, first user of the batch)) and ALS
+(fixed seed and block counts) are seeded. The bootstrap sorts users before resampling. As a result every
+method produces identical lists on 1, 2 and 4 cores (Section 7.4).
 
-**Neighbour quality.** `tools/lsh_recall.py` compares the LSH top-100 neighbours with the exact
-top-100 for a sample of users, on the training part of the validation stage (never the test part).
+**Computational environment.** Tuning and the popularity and kNN test runs: Windows, 4 CPUs, 8 GB driver
+memory. LSH, PPR and ALS test runs and all scalability, shuffle and memory runs: macOS 27.0.1 on Apple
+Silicon, 10 CPUs, 24 GB RAM, 14 GB driver memory (8 GB ran out of memory for LSH).
 
-| Data | Users compared | Neighbour recall@100 | Similarity ratio | Candidates per user | Candidate step (s) |
+**Testing and reproducibility.** 17 unit tests check the metrics by hand, the rejection of malformed lists,
+the splits and cut-offs, the top-k and tie rules, the method contract, and kNN, LSH and PPR on small
+hand-checked cases. Before any test run, `tools/member.py check` confirms that the machine's
+data profile and split statistics equal the group's, and `tools/member.py pilot` must reproduce the group's
+pilot metrics (within 0.002). The repository README gives the commands to reproduce every experiment
+(summarised in Appendix E).
+
+## 6. Experimental Design
+
+**Stages.** On each split, the *validation stage* trains on train and scores on validation; all tuning used
+it. The *test stage* trains on train + validation and scores on test, once per method and split, with the
+parameters from `tools/chosen.json`; the tool refuses to run a test split twice.
+
+**Who is evaluated.** A user with at least one liked target movie and at least one training rating. A user
+for whom a method returns no list still counts with 0, so no method can gain by skipping hard users.
+
+**Metrics.** With k = 10 and binary relevance (a hit is a movie the user liked in the target part):
+Precision@10 = hits / 10, Recall@10 = hits / R (R liked target movies) and NDCG@10 = DCG / IDCG with
+DCG = Σ over hits of 1 / log2(rank + 1) [17], averaged over evaluated users; coverage is the share of the
+training catalogue recommended to anyone.
+
+**Uncertainty and comparisons.** Each metric has a 95% percentile bootstrap interval over users (1,000
+resamples, seed 612). Two methods are compared with a *paired* bootstrap on the same users and resamples,
+reporting the mean difference, its interval and the share of resamples where A is not better than B.
+
+**Baselines.** Popularity for every method; exact kNN for LSH; exact PPR for Monte Carlo PPR.
+
+**Leakage safeguards.** Methods receive only the training DataFrame and never read validation or test;
+splits are time-ordered (strictly across users only in `global_time`, which is why it is included [8]);
+rated movies are never recommended; parameters were fixed before any test run.
+
+**Approximation experiments (RQ2).** LSH: `tools/lsh_recall.py` compares the LSH and exact top-100 neighbours
+of 1,993 sampled users on the full `user_time` validation training data. PPR: `tools/ppr_exact.py` compares
+Monte Carlo and exact top-10 lists for 2,000 sampled users of the same data, for W = 100, 250, 1,000 and
+2,500 walkers, in the same process on one core.
+
+**Scalability experiments (RQ3).** On one machine, every method with its chosen parameters on the
+`user_time` validation stage: 10%, 25%, 50% and 100% of the users on 4 cores, and 1 and 2 cores on the 25%
+sample (30 runs). The measured time is the wall-clock time of `recommend` (index, training, scoring,
+writing). `tools/growth.py` fits t = a · N^b to the 25–100% runs. `tools/sysmetrics.py` repeats the size runs
+and reads shuffle and spill from Spark's monitoring REST API and the peak JVM heap and resident memory.
+
+## 7. Results
+
+### 7.1 Accuracy (RQ1)
+
+*Table 2. Test results, one run per method and split (95% bootstrap intervals).*
+
+| Split | Method | P@10 | R@10 | NDCG@10 | Coverage |
 |---|---|---|---|---|---|
-| 10% pilot (group machine, from `tasks/lsh.md`) | | 0.8247 | 0.9464 | 1,885.7 | 78 |
-| Full `user_time` (this machine) | 1,993 | 0.9164 | 0.9898 | 11,665.3 (median 11,371) | 108.8 |
+| user_time (135,599 users) | ALS | 0.1120 [0.1113, 0.1128] | 0.1216 [0.1206, 0.1226] | 0.1474 [0.1464, 0.1484] | 0.0854 |
+| | exact kNN | 0.1034 [0.1027, 0.1041] | 0.1140 [0.1131, 0.1151] | 0.1367 [0.1357, 0.1377] | 0.0875 |
+| | MinHash-LSH | 0.1033 [0.1025, 0.1040] | 0.1138 [0.1128, 0.1148] | 0.1366 [0.1355, 0.1376] | 0.0879 |
+| | PPR | 0.0749 [0.0743, 0.0755] | 0.0821 [0.0812, 0.0829] | 0.0985 [0.0976, 0.0993] | 0.0602 |
+| | popularity | 0.0619 [0.0613, 0.0624] | 0.0619 [0.0612, 0.0626] | 0.0806 [0.0798, 0.0814] | 0.0129 |
+| global_time (5,542 users) | ALS | 0.1994 [0.1929, 0.2054] | 0.0519 [0.0497, 0.0546] | 0.2221 [0.2150, 0.2288] | 0.1613 |
+| | exact kNN | 0.1898 [0.1835, 0.1959] | 0.0503 [0.0481, 0.0528] | 0.2130 [0.2061, 0.2196] | 0.1390 |
+| | MinHash-LSH | 0.1901 [0.1835, 0.1961] | 0.0506 [0.0483, 0.0532] | 0.2125 [0.2054, 0.2190] | 0.1413 |
+| | PPR | 0.1415 [0.1359, 0.1468] | 0.0370 [0.0349, 0.0395] | 0.1589 [0.1531, 0.1645] | 0.0606 |
+| | popularity | 0.1262 [0.1212, 0.1313] | 0.0337 [0.0318, 0.0362] | 0.1438 [0.1383, 0.1494] | 0.0267 |
 
-Both rows use n_hashes 256, bands 128 (2 values per band), cosine similarity and max_bucket 2,000.
-The candidate step time covers all users; the other columns are averages over the sampled users.
+*Table 3. Paired bootstrap of NDCG@10 differences (A − B), 1,000 resamples of the same users.*
 
-**Recommendation quality.** Paired bootstrap on `user_time` (test, 135,599 users), LSH − exact kNN:
-
-| Metric | LSH | kNN | LSH − kNN [95% CI] | P(LSH ≤ kNN) |
+| A − B | user_time | P(A ≤ B) | global_time | P(A ≤ B) |
 |---|---|---|---|---|
-| P@10 | 0.1033 | 0.1034 | −0.0001 [−0.0002, +0.0000] | 0.932 |
-| R@10 | 0.1138 | 0.1140 | −0.0002 [−0.0005, +0.0000] | 0.942 |
-| NDCG@10 | 0.1366 | 0.1367 | −0.0001 [−0.0003, +0.0001] | 0.918 |
+| ALS − kNN | +0.0107 [+0.0100, +0.0114] | 0.000 | +0.0091 [+0.0055, +0.0128] | 0.000 |
+| LSH − kNN | −0.0001 [−0.0003, +0.0001] | 0.918 | −0.0005 [−0.0014, +0.0004] | 0.854 |
+| PPR − kNN | −0.0382 [−0.0390, −0.0375] | 1.000 | −0.0540 [−0.0578, −0.0504] | 1.000 |
+| ALS − PPR | +0.0489 [+0.0480, +0.0498] | 0.000 | +0.0632 [+0.0582, +0.0681] | 0.000 |
+| ALS − popularity | +0.0668 [+0.0658, +0.0678] | 0.000 | +0.0783 [+0.0729, +0.0836] | 0.000 |
 
-What is given up: on the full data LSH finds 0.9164 of the exact top-100 neighbours, and the
-neighbours it keeps have 0.9898 of the exact similarity mass. What is kept: the recommendations are
-almost the same as exact kNN. The NDCG@10 difference is −0.0001 and its interval includes zero.
-What is gained: the exact similarity is computed only for the candidates (11,665.3 per sampled user
-on the full data) instead of every user who shares a liked movie. The kNN test run was made on the
-group's Windows machine (4 CPUs) and the LSH run on this Mac (10 CPUs), so their recommend times are
-not comparable; the time comparison is in Section 9.4.
+Every method beats popularity on every metric on both splits, with all paired intervals above zero
+(Appendix C). The ranking by NDCG@10 is ALS > exact kNN ≈ LSH > PPR > popularity on both splits.
 
-### 5.6 Limitations
+### 7.2 MinHash-LSH against exact kNN (RQ2)
 
-- **Memory.** The first `user_time` test run on this machine stopped with a Java heap
-  `OutOfMemoryError` at the default 8g driver memory, before anything was scored. The rerun with 14g
-  finished. The heap ran out while Spark was building and caching the per-user candidate lists,
-  with 10 tasks running at once.
-- **Candidates.** With 256 hashes in 128 bands (2 values per band) the banding is loose: on the full
-  `user_time` data each user still got 12,493.0 candidates on average, and every candidate's exact
-  similarity is computed. Very popular buckets (more than 2,000 users) are skipped, so a few true neighbours that
-  only share such a bucket can be missed.
-- **What `global_time` can evaluate.** Only users who rated before the cutoff and liked a movie after
-  it are evaluated (5,542 users, against 135,599 on `user_time`), so its intervals are much wider.
-- **Tuning scope.** Parameters were tuned on the `user_time` pilot only and reused for `global_time`,
-  and the LSH − kNN comparison covers only `user_time` (the `global_time` comparison is in Section 8).
-
-## 6. Monte Carlo Personalized PageRank (PPR)
-
-### 6.1 Method
-
-PPR scores movies for a user by random walks on a bipartite graph [13], [14], estimated by Monte Carlo
-simulation as in [4]. Users and movies are the nodes, and
-an edge joins a user to every movie they liked (rating ≥ 4.0) in the training part. A movie that is
-visited often by walks starting at the user is close to the user's taste.
-
-The implementation (`src/methods/ppr.py`) estimates these scores by simulation:
-
-1. **Walks.** For a user u, `n_walkers` walkers start at u. At each of `n_steps` (20) steps a walker
-   moves from its user to a random movie that user liked (this visit is counted), then to a random
-   user who liked that movie. Then, with probability `alpha` (the restart), it jumps back to u.
-   The visit counts over movies estimate u's PPR scores.
-2. **Noise filter.** Movies visited fewer than `min_visits` times are dropped, because a count of one
-   or two is mostly noise.
-3. **Popularity penalty.** With `beta` > 0, each count is divided by (likes of the movie)^beta, which
-   lowers the weight of very popular movies (as in RP3beta).
-4. **Top 10.** The 10 highest-scoring movies the user has not rated are recommended (ties go to the
-   lower movie id). Users with no like cannot start a walk, and they and any short list are filled
-   with the most popular unseen movies.
-
-On Spark, the training data is turned into compressed numpy arrays (user → liked movies, movie →
-users who liked it) by `src/methods/_shared.py` and broadcast to every worker. Users are processed in
-fixed batches of 256, and the walks of a whole batch are simulated together with numpy. Each batch
-has its own random generator, seeded with (612, first user of the batch). Because the batches are
-fixed, the results do not depend on the number of cores.
-
-### 6.2 Parameters and tuning
-
-Tuning used only the validation stage of the 10% pilot (`user_time_10pct`, 12,905 evaluated users).
-Unlisted parameters keep their defaults: alpha 0.3, n_walkers 100, n_steps 20, beta 0, min_visits 1.
-Sorted by NDCG@10. All runs were made on the group's tuning machine.
-
-| Tag | Parameters | P@10 | R@10 | NDCG@10 | Coverage | Recommend (s) |
-|---|---|---|---|---|---|---|
-| **a0.3_w2500_b0.3_mv10 (chosen)** | **alpha 0.3, 2500 walkers, beta 0.3, min_visits 10** | **0.0462** | **0.0963** | **0.0800** | **0.0462** | **120.08** |
-| a0.5_w1000 | alpha 0.5, 1000 walkers | 0.0453 | 0.0929 | 0.0781 | 0.0214 | 91.58 |
-| a0.3_w1000_b0.3_mv5 | alpha 0.3, 1000 walkers, beta 0.3, min_visits 5 | 0.0455 | 0.0933 | 0.0780 | 0.0607 | 137.98 |
-| a0.3_w1000_b0.5_mv10 | alpha 0.3, 1000 walkers, beta 0.5, min_visits 10 | 0.0454 | 0.0959 | 0.0776 | 0.1427 | 153.91 |
-| a0.3_w2500 | alpha 0.3, 2500 walkers | 0.0440 | 0.0896 | 0.0763 | 0.0142 | 158.4 |
-| a0.3_w1000 | alpha 0.3, 1000 walkers | 0.0439 | 0.0882 | 0.0757 | 0.0163 | 98.21 |
-| a0.3_w250 | alpha 0.3, 250 walkers | 0.0406 | 0.0826 | 0.0689 | 0.0291 | 69.24 |
-| a0.3 | alpha 0.3 | 0.0356 | 0.0731 | 0.0608 | 0.0499 | 65.12 |
-| default | (defaults) | 0.0356 | 0.0731 | 0.0608 | 0.0499 | 67.2 |
-| a0.5 | alpha 0.5 | 0.0348 | 0.0739 | 0.0606 | 0.0689 | 65.4 |
-| a0.1 | alpha 0.1 | 0.0340 | 0.0670 | 0.0581 | 0.0412 | 75.96 |
-| a0.3_b0.3 | alpha 0.3, beta 0.3 | 0.0113 | 0.0309 | 0.0226 | 0.7236 | 76.45 |
-| a0.5_b0.5 | alpha 0.5, beta 0.5 | 0.0002 | 0.0007 | 0.0004 | 0.5874 | 74.75 |
-| a0.3_b0.5 | alpha 0.3, beta 0.5 | 0.0001 | 0.0004 | 0.0002 | 0.5507 | 66.09 |
-| a0.3_b0.7 | alpha 0.3, beta 0.7 | 0.0001 | 0.0002 | 0.0002 | 0.4682 | 66.51 |
-
-The chosen configuration is fixed in `tools/chosen.json`.
-
-### 6.3 Test results
-
-Train + validation → test, one run per split, with the chosen parameters.
-
-| Method | Split | P@10 [95% CI] | R@10 [95% CI] | NDCG@10 [95% CI] | Coverage | Evaluated users | Recommend (s) |
-|---|---|---|---|---|---|---|---|
-| PPR | user_time | 0.0749 [0.0743, 0.0755] | 0.0821 [0.0812, 0.0829] | 0.0985 [0.0976, 0.0993] | 0.0602 | 135,599 | 115.61 |
-| Popularity | user_time | 0.0619 [0.0613, 0.0624] | 0.0619 [0.0612, 0.0626] | 0.0806 [0.0798, 0.0814] | 0.0129 | 135,599 | 38.45 |
-| PPR | global_time | 0.1415 [0.1359, 0.1468] | 0.0370 [0.0349, 0.0395] | 0.1589 [0.1531, 0.1645] | 0.0606 | 5,542 | 87.19 |
-| Popularity | global_time | 0.1262 [0.1212, 0.1313] | 0.0337 [0.0318, 0.0362] | 0.1438 [0.1383, 0.1494] | 0.0267 | 5,542 | 35.53 |
-
-The PPR runs were made on macOS 27.0.1 (arm64), 10 CPUs, Spark 4.0.1, 14g driver memory, all cores.
-The popularity rows come from the group's runs on Windows 10 (AMD64), 4 CPUs, 8g driver memory.
-Run times from the two machines are not comparable.
-
-### 6.4 Comparison with the baseline
-
-Paired bootstrap (1,000 resamples of the same users), PPR − popularity:
-
-| Split | Users | ΔP@10 [95% CI] | ΔR@10 [95% CI] | ΔNDCG@10 [95% CI] |
+| Data | Users compared | Neighbour recall@100 | Similarity ratio | Candidates per user |
 |---|---|---|---|---|
-| user_time | 135,599 | +0.0130 [+0.0127, +0.0133] | +0.0201 [+0.0196, +0.0207] | +0.0179 [+0.0174, +0.0183] |
-| global_time | 5,542 | +0.0153 [+0.0135, +0.0170] | +0.0033 [+0.0021, +0.0044] | +0.0151 [+0.0131, +0.0170] |
+| 10% pilot | | 0.8247 | 0.9464 | 1,885.7 |
+| Full `user_time` | 1,993 | 0.9164 | 0.9898 | 11,665.3 (median 11,371) |
 
-PPR beats the popularity baseline on every metric on both splits. All intervals are above zero, and
-the share of resamples where PPR was not better is 0.000 in all six cases. The gain is modest: on
-`user_time`, NDCG@10 rises from 0.0806 to 0.0985. Coverage rises from 0.0129 to 0.0602 on `user_time`.
+On the full data LSH finds 0.9164 of the exact top-100 neighbours, and the neighbours it keeps carry 0.9898
+of the exact similarity mass. The resulting recommendations are statistically indistinguishable from exact
+kNN (Table 3, LSH − kNN). Time and shuffle are in Sections 7.4 and 7.5.
 
-### 6.5 Findings from tuning
+### 7.3 Monte Carlo PPR against exact PPR (RQ2)
 
-- **More walkers help, with diminishing returns.** At alpha 0.3 with no penalty, NDCG@10 was 0.0608
-  with 100 walkers, 0.0689 with 250, 0.0757 with 1000 and 0.0763 with 2500. Most of the gain comes by
-  1000 walkers; going to 2500 moved NDCG@10 only from 0.0757 to 0.0763.
-- **The popularity penalty `beta` works only together with `min_visits`.** Without a visit filter,
-  beta collapses NDCG@10: 0.0226 with beta 0.3, and 0.0002 with beta 0.5 and 0.7 (alpha 0.3, 100
-  walkers). Rarely visited movies have tiny like counts, so the penalty gives them the largest boost
-  and they crowd out the rest; coverage jumps to 0.7236 with beta 0.3. With min_visits the penalty
-  helps instead: with 2500 walkers, beta 0.3 and min_visits 10 gave the best result, 0.0800 against
-  0.0763 without the penalty, and coverage rose from 0.0142 to 0.0462.
-- **The restart probability `alpha` mattered little** at 100 walkers: 0.0581 (alpha 0.1), 0.0608 (0.3)
-  and 0.0606 (0.5).
-
-### 6.6 Approximation quality against exact PPR
-
-The proposal's ground truth for Monte Carlo PPR is exact PPR on 2,000 sampled users.
-`tools/ppr_exact.py` computes the exact expected visit counts of the method's own walk (alpha 0.3,
-20 steps; Section 6.1) by repeated sparse matrix products, and compares the top-10 unseen movies
-with those of the Monte Carlo walks from the same users. It uses the training part of the validation stage
-of `user_time` (2,000 users with at least one like, sampled with seed 612); the test part is
-never read. NDCG@10 is scored against the validation target with `src/evaluate.py`.
-
-Two comparisons: **raw PPR** (no popularity penalty, no visit filter) measures the approximation itself;
-the **chosen rules** apply the same penalty (beta 0.3) to both sides and the visit filter
-(min_visits 10) to the Monte Carlo side only, because exact scores have no sampling noise to filter.
+*Table 4. 2,000 sampled users, `user_time` validation stage. "Raw": no penalty, no visit filter, which
+measures the approximation itself; "chosen rules": beta 0.3 on both sides, min_visits 10 on the Monte Carlo
+side.*
 
 | Walkers W | Overlap@10, raw | NDCG@10, raw | Overlap@10, chosen rules | NDCG@10, chosen rules | Monte Carlo s per 1,000 users |
 |---|---|---|---|---|---|
@@ -590,246 +409,25 @@ the **chosen rules** apply the same penalty (beta 0.3) to both sides and the vis
 | 1,000 | 0.8062 | 0.0790 | 0.7294 | 0.0822 | 1.0 |
 | 2,500 (chosen) | 0.8732 | 0.0797 | 0.8238 | 0.0842 | 1.86 |
 
-Exact PPR: NDCG@10 0.0802 raw and 0.0867 with the penalty; 152.68 s per
-1,000 users. Exact and Monte Carlo scores are both computed with numpy on one core of the driver, in the same
-run on the same machine, so their times can be compared.
+Exact PPR reaches NDCG@10 0.0802 raw and 0.0867 with the penalty, at 152.68 s per 1,000 users on the same
+core. Raw overlap rises from 0.5089 to 0.8732 with W, and every W is far cheaper than the exact computation.
 
-Raw overlap with the exact top 10 goes from 0.5089 at W = 100 to 0.8732 at
-W = 2,500. At every W tested the walks were faster than the exact computation (1.86 s per 1,000 users at W = 2,500 against 152.68 s for exact PPR).
+### 7.4 Time against data size and cores (RQ3)
 
-Under the chosen rules the overlap is not monotone in W: 0.7568 at W = 100 but 0.5335 at W = 250. This is an
-effect of the visit filter, not better estimates at W = 100 (`tools/ppr_fill_check.py`, `reports/ppr_fill_check.md`;
-same users and seeds). With 100 walkers and min_visits 10, the median user keeps only 2 unseen movies, and 99.6% of
-the users keep fewer than 10, so 80.4% of the top-10 slots are filled with the most popular unseen movies (Section
-6.1). The exact top 10 with the penalty is itself made of very popular movies (median popularity rank 9), so 75.1%
-of these fill slots are also in the exact top 10. At W = 250 the median user keeps 29 movies and only 1.9% of the
-slots are filled; the list now comes from the walks, but 71.5% of the movies it picks have fewer than 20 visits, so
-their counts are still noisy, and only 52.8% of them are in the exact top 10. From W = 1,000 on, no slot is filled,
-almost no picked movie is that close to the filter, and the overlap rises with W (0.7294, then 0.8238).
+![Recommend time against users, log-log, with fitted lines](figures/time_vs_users_loglog.png)
 
-### 6.7 Limitations
+*Table 5. Recommend time on 4 cores (evaluated users 12,905 / 32,278 / 64,883 / 130,411) and fitted growth
+t = a · N^b on the 25–100% runs.*
 
-- **Memory.** Each batch of 256 users keeps a dense count matrix with one value per user and movie,
-  and the whole training index is broadcast to every worker. This fits MovieLens 20M on one machine,
-  but memory grows with the number of movies.
-- **Run time grows with the walkers.** On the pilot (alpha 0.3, no penalty), 100 walkers took 65.12 s,
-  1000 took 98.21 s and 2500 took 158.4 s. The scores are a Monte Carlo estimate, so fewer walkers
-  means noisier scores, and NDCG@10 drops (see Section 6.5).
-- **One random seed.** All runs use seed 612. Because the scores come from random walks, another seed could
-  give somewhat different numbers; we did not measure this.
-- **What `global_time` can evaluate.** Only users who rated before the cutoff and liked a movie after
-  it are evaluated (5,542 users, against 135,599 on `user_time`), so its intervals are much wider.
-  Parameters were tuned on the `user_time` pilot only and reused for `global_time`.
-
-## 7. ALS (Spark MLlib, implicit feedback)
-
-### 7.1 Method
-
-ALS factorises the user–movie matrix into a user factor matrix U and an item factor matrix V of a
-chosen rank. The score of a movie for a user is the dot product of their two factor vectors. We use
-the implicit-feedback version of Hu, Koren and Volinsky [15], as implemented in Spark MLlib [16]. Every liked pair (rating ≥ 4.0) in the
-training part is a positive with value 1, and every other pair is a weak negative. The parameter
-`alpha` sets how much more confidence an observed like gets than an unobserved pair. `reg` is the L2
-penalty on the factors.
-
-The implementation (`src/methods/als.py`) has two parts:
-
-- **Training on Spark.** `pyspark.ml.recommendation.ALS` is fitted on the liked pairs with
-  `implicitPrefs=True`, a fixed seed (612), 10 iterations, and 10 user blocks and 10 item blocks.
-  The block counts are fixed so the factors do not change with the number of cores.
-- **Exact scoring with numpy.** The factors are collected to the driver as numpy arrays and broadcast
-  with the training index from `src/methods/_shared.py`. Users are scored in fixed batches of 256.
-  Each batch computes U·Vᵀ for all movies, removes every movie the user rated in training, and keeps
-  the 10 best by `top_k` (ties go to the lower movie id). Only movies with a factor are candidates.
-  A user with no factor (no like in training) gets the most popular unseen movies, as does any list
-  with fewer than 10 candidates. MLlib's `recommendForAllUsers` is not used, because it cannot leave
-  out seen movies.
-
-### 7.2 Parameters and tuning
-
-Tuning used only the validation stage of the 10% pilot (`user_time_10pct`, 12,905 evaluated users).
-Unlisted parameters keep their defaults: rank 64, alpha 10, reg 0.05, 10 iterations, likes as the
-signal. Sorted by NDCG@10. Recommend times were measured on the group's tuning machine.
-
-| Tag | Parameters | P@10 | R@10 | NDCG@10 | Coverage | Recommend (s) |
+| Method | 10% | 25% | 50% | 100% | Exponent b | Predicted at 10× users |
 |---|---|---|---|---|---|---|
-| **r128_a1_reg0.1 (chosen)** | **rank 128, alpha 1, reg 0.1** | **0.0688** | **0.1412** | **0.1170** | **0.1095** | **383.89** |
-| r64_a0.3 | rank 64, alpha 0.3 | 0.0668 | 0.1346 | 0.1128 | 0.0720 | 109.03 |
-| r64_a1 | rank 64, alpha 1 | 0.0667 | 0.1355 | 0.1127 | 0.0783 | 123.38 |
-| r64_a3 | rank 64, alpha 3 | 0.0657 | 0.1356 | 0.1107 | 0.0936 | 131.68 |
-| r128_a1 | rank 128, alpha 1 | 0.0643 | 0.1306 | 0.1095 | 0.0997 | 279.28 |
-| r128_a1_it15 | rank 128, alpha 1, 15 iterations | 0.0639 | 0.1293 | 0.1091 | 0.1005 | 393.65 |
-| r128 | rank 128 | 0.0604 | 0.1281 | 0.1030 | 0.1361 | 282.36 |
-| r64_reg0.1 | rank 64, reg 0.1 | 0.0618 | 0.1283 | 0.1025 | 0.1236 | 124.65 |
-| default | (defaults) | 0.0610 | 0.1275 | 0.1019 | 0.1186 | 115.95 |
-| r64 | rank 64 | 0.0610 | 0.1275 | 0.1019 | 0.1186 | 116.22 |
-| r64_reg0.01 | rank 64, reg 0.01 | 0.0609 | 0.1267 | 0.1015 | 0.1144 | 122.41 |
-| r32 | rank 32 | 0.0614 | 0.1240 | 0.1008 | 0.0994 | 78.68 |
-| r64_a40 | rank 64, alpha 40 | 0.0521 | 0.1129 | 0.0870 | 0.1543 | 122.21 |
-| r64_rating | rank 64, ratings as confidence | 0.0399 | 0.0902 | 0.0659 | 0.2062 | 137.75 |
+| popularity | 2.73 s | 3.19 s | 3.49 s | 4.11 s | 0.18 | 6 s |
+| exact kNN | 5.06 s | 12.52 s | 38.91 s | 132.33 s | 1.69 | 6,366 s |
+| LSH | 13.92 s | 46.65 s | 172.75 s | 535.49 s | 1.75 | 30,864 s |
+| PPR | 17.13 s | 43.18 s | 62.36 s | 142.84 s | 0.86 | 951 s |
+| ALS | 44.97 s | 97.01 s | 190.82 s | 385.66 s | 0.99 | 3,738 s |
 
-The chosen configuration (rank 128, alpha 1.0, reg 0.1) is fixed in `tools/chosen.json`. Before the
-test runs, this machine re-ran it on the pilot and reproduced the group's NDCG@10 of 0.117001 exactly.
-
-### 7.3 Test results
-
-Train + validation → test, one run per split, with the chosen parameters.
-
-| Method | Split | P@10 [95% CI] | R@10 [95% CI] | NDCG@10 [95% CI] | Coverage | Evaluated users | Recommend (s) |
-|---|---|---|---|---|---|---|---|
-| ALS | user_time | 0.1120 [0.1113, 0.1128] | 0.1216 [0.1206, 0.1226] | 0.1474 [0.1464, 0.1484] | 0.0854 | 135,599 | 159.06 |
-| Popularity | user_time | 0.0619 [0.0613, 0.0624] | 0.0619 [0.0612, 0.0626] | 0.0806 [0.0798, 0.0814] | 0.0129 | 135,599 | 38.45 |
-| ALS | global_time | 0.1994 [0.1929, 0.2054] | 0.0519 [0.0497, 0.0546] | 0.2221 [0.2150, 0.2288] | 0.1613 | 5,542 | 162.62 |
-| Popularity | global_time | 0.1262 [0.1212, 0.1313] | 0.0337 [0.0318, 0.0362] | 0.1438 [0.1383, 0.1494] | 0.0267 | 5,542 | 35.53 |
-
-The ALS runs were made on macOS 27.0.1 (arm64), 10 CPUs, Spark 4.0.1, 8g driver memory, all cores.
-The popularity rows come from the group's runs on Windows 10 (AMD64), 4 CPUs, 8g driver memory.
-Run times from the two machines are not comparable.
-
-### 7.4 Comparison with the baseline
-
-Paired bootstrap (1,000 resamples of the same users), ALS − popularity:
-
-| Split | Users | ΔP@10 [95% CI] | ΔR@10 [95% CI] | ΔNDCG@10 [95% CI] |
-|---|---|---|---|---|
-| user_time | 135,599 | +0.0502 [+0.0495, +0.0509] | +0.0596 [+0.0586, +0.0607] | +0.0668 [+0.0658, +0.0678] |
-| global_time | 5,542 | +0.0732 [+0.0684, +0.0780] | +0.0181 [+0.0155, +0.0209] | +0.0783 [+0.0729, +0.0836] |
-
-ALS beats the popularity baseline on every metric on both splits. No interval comes near zero, and
-the share of resamples where ALS was not better is 0.000 in all six cases. On `user_time`, NDCG@10
-rises from 0.0806 to 0.1474. ALS also recommends a much wider part of the catalogue (coverage 0.0854
-against 0.0129 on `user_time`).
-
-### 7.5 Findings from tuning and comparison with kNN
-
-- **The confidence weight `alpha` mattered most.** At rank 64, NDCG@10 was 0.1128 with alpha 0.3,
-  0.1127 with alpha 1, 0.1107 with alpha 3, 0.1019 with alpha 10 (the default) and 0.0870 with
-  alpha 40. Alpha 0.3 and 1 are practically tied (difference 0.0001); alpha 1 was kept for the larger
-  rank. Using the raw ratings as confidence instead of likes was much worse (0.0659), although it
-  gave the highest coverage (0.2062).
-- **Rank and reg helped only slightly.** With alpha 10, rank 32, 64 and 128 gave
-  0.1008, 0.1019 and 0.1030. With alpha 1, going from rank 64 to 128 alone lowered NDCG@10 (0.1127 →
-  0.1095). Raising reg from 0.05 to 0.1 at rank 128 then gave the best result, 0.1170. Without a
-  rank-64, alpha-1, reg-0.1 run we cannot separate the effect of rank from that of reg. 15 iterations
-  instead of 10 did not help (0.1091 vs 0.1095).
-- **ALS against exact user-kNN** on `user_time` (test, 135,599 users, paired bootstrap):
-
-| Metric | ALS | kNN | ALS − kNN [95% CI] |
-|---|---|---|---|
-| P@10 | 0.1120 | 0.1034 | +0.0086 [+0.0081, +0.0091] |
-| R@10 | 0.1216 | 0.1140 | +0.0076 [+0.0068, +0.0084] |
-| NDCG@10 | 0.1474 | 0.1367 | +0.0107 [+0.0100, +0.0114] |
-
-  ALS is better than exact kNN on all three metrics, by about 0.01 NDCG@10. The intervals exclude
-  zero. Coverage is close (ALS 0.0854, kNN 0.0875).
-
-### 7.6 Limitations
-
-- **Memory and the driver.** Both factor matrices are collected to the driver and broadcast to every
-  worker, and each batch builds a dense 256 × (number of movies) score matrix. This fits MovieLens
-  20M on one machine but would not scale to a much larger catalogue without approximate scoring.
-- **Run time.** Recommend time (training plus scoring) grows with the rank. On the pilot, rank 64 took 116.22 s and rank 128
-  took 282.36 s, and the chosen configuration took 383.89 s.
-- **What `global_time` can evaluate.** Only users who rated before the cutoff and liked a movie after
-  it are evaluated (5,542 users, against 135,599 on `user_time`), so its intervals are much wider.
-  Its recall is low (0.0519) while its precision is high (0.1994): with only 10 slots per list,
-  recall stays low when a user liked many movies in the test part.
-- **Tuning scope.** Parameters were tuned on the `user_time` pilot only and reused for `global_time`.
-  The grid was small: one parameter changed at a time from a few starting points.
-
-## 8. Paired comparisons between methods
-
-Each row is a paired bootstrap (`tools/compare.py`): the per-user metrics of two test runs are joined on
-the user id, users are resampled 1,000 times with the same resample for both methods (seed 612), and the
-table gives the mean difference A − B with its 95% interval. P(A ≤ B) is the share of resamples where A
-was not better than B. Both runs always evaluate exactly the same users. Logs: `logs/compare/`.
-
-Each method is compared with exact kNN (the reference that LSH approximates), and the best method on both
-splits, ALS, is compared with every other method.
-
-### 8.1 user_time (135,599 users)
-
-| A − B | ΔP@10 [95% CI] | ΔR@10 [95% CI] | ΔNDCG@10 [95% CI] | P(A ≤ B), NDCG |
-|---|---|---|---|---|
-| LSH − kNN | −0.0001 [−0.0002, +0.0000] | −0.0002 [−0.0005, +0.0000] | −0.0001 [−0.0003, +0.0001] | 0.918 |
-| ALS − kNN | +0.0086 [+0.0081, +0.0091] | +0.0076 [+0.0068, +0.0084] | +0.0107 [+0.0100, +0.0114] | 0.000 |
-| PPR − kNN | −0.0285 [−0.0291, −0.0279] | −0.0319 [−0.0328, −0.0312] | −0.0382 [−0.0390, −0.0375] | 1.000 |
-| ALS − LSH | +0.0088 [+0.0083, +0.0092] | +0.0078 [+0.0070, +0.0086] | +0.0108 [+0.0101, +0.0115] | 0.000 |
-| ALS − PPR | +0.0371 [+0.0365, +0.0378] | +0.0395 [+0.0386, +0.0405] | +0.0489 [+0.0480, +0.0498] | 0.000 |
-| ALS − popularity | +0.0502 [+0.0495, +0.0509] | +0.0596 [+0.0586, +0.0607] | +0.0668 [+0.0658, +0.0678] | 0.000 |
-
-### 8.2 global_time (5,542 users)
-
-| A − B | ΔP@10 [95% CI] | ΔR@10 [95% CI] | ΔNDCG@10 [95% CI] | P(A ≤ B), NDCG |
-|---|---|---|---|---|
-| LSH − kNN | +0.0003 [−0.0007, +0.0012] | +0.0002 [−0.0003, +0.0007] | −0.0005 [−0.0014, +0.0004] | 0.854 |
-| ALS − kNN | +0.0096 [+0.0064, +0.0131] | +0.0015 [−0.0006, +0.0038] | +0.0091 [+0.0055, +0.0128] | 0.000 |
-| PPR − kNN | −0.0483 [−0.0515, −0.0450] | −0.0133 [−0.0151, −0.0116] | −0.0540 [−0.0578, −0.0504] | 1.000 |
-| ALS − LSH | +0.0093 [+0.0059, +0.0126] | +0.0013 [−0.0008, +0.0036] | +0.0096 [+0.0061, +0.0133] | 0.000 |
-| ALS − PPR | +0.0579 [+0.0534, +0.0625] | +0.0149 [+0.0123, +0.0175] | +0.0632 [+0.0582, +0.0681] | 0.000 |
-| ALS − popularity | +0.0732 [+0.0684, +0.0780] | +0.0181 [+0.0155, +0.0209] | +0.0783 [+0.0729, +0.0836] | 0.000 |
-
-### 8.3 What the comparisons show
-
-- **The ranking is the same on both splits:** ALS > exact kNN ≈ LSH > PPR > popularity, by NDCG@10.
-- **ALS is the best method.** It beats every other method on P@10 and NDCG@10 on both splits, with all
-  intervals above zero. On `global_time` its recall advantage over kNN (+0.0015 [−0.0006, +0.0038]) and
-  over LSH (+0.0013 [−0.0008, +0.0036]) is not significant.
-- **LSH matches exact kNN.** Every LSH − kNN interval contains zero on both splits.
-- **PPR is clearly below kNN** on every metric on both splits, though it still beats popularity
-  (Section 6).
-- The intervals on `global_time` are much wider than on `user_time`, because it evaluates 5,542 users
-  against 135,599. Differences should only be compared within one split: the two splits evaluate
-  different users with different targets (Section 2).
-
-## 9. Scalability
-
-### 9.1 Setup
-
-Every method ran with its chosen parameters (`tools/chosen.json`) on the validation stage of `user_time`
-(train → val; the test part is never used here), 30 runs in total (`tools/scale.py`):
-
-- **Data size:** 10%, 25%, 50% and 100% of users, with 4 cores.
-- **Cores:** 1 and 2 cores on the 25% sample (the 4-core point comes from the first set).
-
-Users are sampled by a hash of their id (`common.user_sample`), so the samples are nested
-(10% ⊂ 25% ⊂ 50% ⊂ 100%). The 10% sample is the tuning pilot: each method's 10% run gives exactly its
-pilot validation NDCG@10 (for example ALS 0.117001, kNN 0.1081).
-
-**All 30 timings come from one machine:** macOS 27.0.1 on Apple Silicon (arm64), 10 CPUs, 24 GB RAM,
-Spark 4.0.1 in local mode, `--driver-memory 14g` for every run (8g ran out of memory for LSH on this
-machine). Only these timings can be compared with each other. The "recommend seconds" in the test-result
-tables of the method sections come from different machines (Section 3.5) and must **not** be used to
-compare methods.
-
-"Recommend time" is the wall-clock time of the method's `recommend` call: building the index, training
-(ALS), scoring all users and writing the lists. It does not include evaluation.
-
-### 9.2 Time against data size (4 cores)
-
-![Recommend time against data size](figures/time_vs_sample.png)
-
-| Method | 10% | 25% | 50% | 100% | NDCG@10 at 100% |
-|---|---|---|---|---|---|
-| popularity | 2.73 s | 3.19 s | 3.49 s | 4.11 s | 0.0642 |
-| exact kNN | 5.06 s | 12.52 s | 38.91 s | 132.33 s | 0.1132 |
-| LSH | 13.92 s | 46.65 s | 172.75 s | 535.49 s | 0.1131 |
-| PPR | 17.13 s | 43.18 s | 62.36 s | 142.84 s | 0.0806 |
-| ALS | 44.97 s | 97.01 s | 190.82 s | 385.66 s | 0.1214 |
-
-Evaluated users: 12,905 / 32,278 / 64,883 / 130,411.
-
-- **Popularity** barely changes with size: its runs take a few seconds and are dominated by fixed Spark
-  overhead.
-- **ALS and PPR** grow roughly in proportion to the number of users: going from 50% to 100% of users
-  doubles the users, and their time goes from 190.82 s to 385.66 s (ALS) and from 62.36 s to 142.84 s (PPR).
-- **Exact kNN and LSH** grow faster than the number of users: from 50% to 100%, kNN goes from 38.91 s to
-  132.33 s and LSH from 172.75 s to 535.49 s. Both compare each user with other users, so more users means
-  both more users to score and more neighbours to check per user.
-
-### 9.3 Time against cores (25% sample)
-
-![Recommend time against cores](figures/time_vs_cores.png)
+*Table 6. Recommend time on the 25% sample against cores.*
 
 | Method | 1 core | 2 cores | 4 cores | Speed-up 1→4 |
 |---|---|---|---|---|
@@ -839,154 +437,121 @@ Evaluated users: 12,905 / 32,278 / 64,883 / 130,411.
 | PPR | 63.78 s | 56.69 s | 43.18 s | 1.48× |
 | ALS | 182.61 s | 140.55 s | 97.01 s | 1.88× |
 
-(Speed-ups from `reports/results.md`.)
+For every method NDCG@10 on the 25% sample is identical on 1, 2 and 4 cores (for example kNN 0.109253 and ALS
+0.118417), so parallelism changes only the time. Figures with linear axes are in `report/figures/`.
 
-- kNN and LSH scale best with cores: their per-user scoring is independent across the fixed batches of
-  256 users. Neither reaches the ideal 4×; a likely reason is that part of each run is not parallel
-  (the training index is built on the driver and broadcast before the scoring starts).
-- ALS gains less. A likely reason is that MLlib's alternating least squares works on a fixed number of
-  blocks and has to synchronise after every iteration. We did not measure where the time goes.
-- PPR gains the least of the four (1.48×) on this sample.
-- Popularity does not get faster at all; its time is Spark overhead.
-- For every method NDCG@10 on the 25% sample is identical on 1, 2 and 4 cores (popularity 0.063721, kNN
-  0.109253, LSH 0.108492, PPR 0.079758, ALS 0.118417): the results do not depend on the number of cores.
+### 7.5 Shuffle volume and memory (RQ2, RQ3)
 
-### 9.4 LSH against exact kNN: what the approximation buys
+*Table 7. Recommend phase, 4 cores, 14 GB driver memory.*
 
-| | 10% | 25% | 50% | 100% |
-|---|---|---|---|---|
-| exact kNN time | 5.06 s | 12.52 s | 38.91 s | 132.33 s |
-| LSH time | 13.92 s | 46.65 s | 172.75 s | 535.49 s |
+| Method | Shuffle write, 10% (MB) | Shuffle write, 100% (MB) | Peak JVM heap, 100% (GB) |
+|---|---|---|---|
+| popularity | 4.8 | 41.9 | 2.65 |
+| exact kNN | 3.8 | 0.0 | 2.57 |
+| LSH | 164.5 | 10,848.6 | 13.57 |
+| PPR | 0.0 | 0.0 | 2.40 |
+| ALS | 855.9 | 6,336.0 | 2.79 |
 
-LSH finds 0.9164 of the exact top-100 neighbours on the full data (0.8247 on the 10% pilot), and its
-test NDCG@10 is the same as exact kNN within the bootstrap interval (Section 5). But on this
-machine **LSH is slower than exact kNN at every data size**, and the gap grows with the data (535.49 s
-against 132.33 s at 100%). With the chosen setting (256 hashes in 128 bands, 2 values per band) the
-banding is loose: on the full validation training data each sampled user still has 11,665.3 candidates
-on average (Section 5), and grouping users into buckets is extra work on top of the exact
-similarity of every candidate. Exact kNN, which gets each user's overlaps in one pass over the
-item → likers index, is already fast at this size. A stricter banding (more values per band) would give
-fewer candidates and could make LSH faster, but it lost accuracy in tuning, and the group did not tune
-for time.
+No run spilled to disk. Values below about 20 MB for popularity, kNN and PPR are measurement noise from
+separating the recommend and evaluation phases by time; resident-memory figures are in Appendix D.
 
-**Growth curves and break-even size.** `tools/growth.py` fits t = a · N^b to the 25%, 50% and 100% runs
-of each method (N = evaluated users; at 10% fixed Spark overhead is a large part of the time):
+## 8. Analysis and Discussion
 
-![Recommend time against users, log-log](figures/time_vs_users_loglog.png)
+**Why ALS is the most accurate.** A likely reason is that ALS learns a dense taste vector for every user from
+all of their likes at once, so two users who share no movie can still be close through movies that others
+connect. Neighbourhood
+scoring uses only users who share liked movies with the target user, and only the 100 nearest. The gain is
+modest but certain: +0.0107 NDCG@10 over exact kNN with a paired interval of [+0.0100, +0.0114] on
+`user_time`, and the same sign on `global_time`. Tuning showed that ALS depends mostly on the confidence
+weight: alpha 1 was far better than the default 10, and using raw ratings as confidence was much worse
+(Appendix A.4).
 
-| Method | Exponent b | R² | Time at 100% (s) | Predicted at 10× the users (s) |
-|---|---|---|---|---|
-| popularity | 0.18 | 0.973 | 4.11 | 6 |
-| exact kNN | 1.69 | 1.000 | 132.33 | 6,366 |
-| LSH | 1.75 | 0.998 | 535.49 | 30,864 |
-| PPR | 0.86 | 0.953 | 142.84 | 951 |
-| ALS | 0.99 | 1.000 | 385.66 | 3,738 |
+**Why LSH matches exact kNN.** Missing 8% of the top-100 neighbours costs almost nothing because the users
+LSH keeps instead are almost as similar: its neighbours carry 0.9898 of the exact similarity mass. Movie
+scores are sums over 100 neighbours, so the top 10 barely change (NDCG difference −0.0001, interval
+containing zero).
 
-(From `reports/growth.md`. The prediction keeps the movie catalogue fixed and extrapolates three points,
-so it is a rough estimate.)
+**Why LSH saves no time (unexpected result).** The neighbours that matter have low Jaccard similarity in this
+data, so only loose banding (2 values per band, threshold well below the proposal's 0.42) keeps them; the
+proposal's 4-value bands left 4,027 pilot users with no candidates. Loose banding produces about 11,700
+candidates per user, every one of which is verified exactly, and the bucket grouping adds about 10.6 GB of shuffle (10,848.6 MB)
+and a 13.6 GB heap at 100% of the users. Exact kNN, by contrast, gets all overlaps of a user in one pass over
+the movie → likers index, a cache-friendly operation on a broadcast array. The fitted exponents (1.75 for LSH,
+1.69 for exact kNN) mean the curves do not cross: with this banding there is no break-even size, and at ten
+times the users LSH is predicted to need about 30,900 s against 6,400 s. LSH would pay off only with
+stricter banding, which in our data loses neighbours, or where the exact index no longer fits in memory.
 
-Exact kNN grows close to the square of the users (b = 1.69), as the cost analysis in the proposal
-expected. LSH, with the chosen banding, grows at least as fast (b = 1.75), so the two fitted curves do
-not cross: **there is no break-even size** at which this LSH configuration becomes cheaper than exact
-kNN, and at ten times the users the gap is predicted to widen (about 30,900 s against 6,400 s). The
-proposal expected LSH to grow close to linearly; that would need a stricter banding with far fewer
-candidates per user, which lost accuracy in tuning (Section 5.2). ALS (b = 0.99) and PPR (b = 0.86)
-grow about linearly with the users.
+**Why Monte Carlo PPR pays off.** Each walk step is a constant-time array lookup, so the cost is linear in
+users × walkers × steps, while exact PPR needs repeated sparse matrix products over the whole graph for
+every user. At the chosen 2,500 walkers the walks are about 80 times faster (1.86 against 152.68 s per
+1,000 users); for all 130,411 users that is roughly 4 minutes against 5.5 hours on one core, for an overlap of
+0.8732 with the exact top 10 and almost the same NDCG (0.0797 against 0.0802, raw). The overlap under the
+chosen rules is not monotone in W (0.7568 at 100 walkers, 0.5335 at 250): with 100 walkers and min_visits 10
+the median user keeps only 2 movies, 80.4% of the top-10 slots are filled with popular movies, and the exact
+top 10 with the penalty consists of very popular movies too (`reports/ppr_fill_check.md`). The overlap at
+W = 100 is therefore agreement through the popularity fill, not better estimates.
 
-The break-even of Monte Carlo PPR against exact PPR is in Section 6.6.
+**Why PPR is the weakest personalised method.** Even exact PPR scores only 0.0802 NDCG@10 on the sample, so
+the gap to kNN is a property of the walk, not of the sampling. Walks drift towards popular movies; the
+penalty corrects this, but only together with the visit filter: without it, beta 0.3 dropped pilot NDCG@10 to
+0.0226, because rarely visited movies with tiny like counts received the largest boost (Appendix A.3).
 
-### 9.5 Shuffle volume and peak memory
+**The two splits.** `global_time` gives higher precision and NDCG but lower recall for every method. It
+evaluates only 5,542 returning users whose test periods often hold many likes, so ten slots give high
+precision but low recall, and it cannot count likes of movies that are new in the test period. Its intervals are about seven
+times wider. Absolute numbers are therefore not comparable across splits, but the ranking of the methods is
+identical, which is the question RQ1 asks.
 
-The scalability timings above do not include shuffle volume or memory, so `tools/sysmetrics.py` repeats the
-size runs (10% to 100% of the users, 4 cores, chosen parameters, driver memory 14g) on the same machine and
-reads Spark's monitoring REST API (shuffle and spill, summed over the stages of the recommend phase) and the
-resident memory of the whole process tree (Python driver, Spark JVM, Python workers; sampled every 0.5 s).
+**What drives scalability.** Popularity is dominated by fixed Spark overhead. ALS and PPR grow about linearly
+with the users. Exact kNN and LSH grow almost quadratically because more users mean both more users to score
+and more neighbours per user. With cores, kNN and LSH scale best (2.38× and 2.52× on 4 cores) because their
+batches are independent; neither reaches 4× because the index is built and broadcast on the driver first.
+ALS synchronises after every iteration over a fixed number of blocks (1.88×), and PPR gained least (1.48×).
+The broadcast design keeps shuffle near zero for kNN and PPR, but every worker holds the whole index, so
+memory, not the network, is the limit in local mode.
 
-| Method | Shuffle write, 10% (MB) | Shuffle write, 100% (MB) | Spilled to disk, 100% (MB) | Peak resident memory, 10% (GB) | Peak resident memory, 100% (GB) | Peak JVM heap, 100% (GB) |
-|---|---|---|---|---|---|---|
-| popularity | 4.8 | 41.9 | 0.0 | 2.07 | 3.13 | 2.65 |
-| exact kNN | 3.8 | 0.0 | 0.0 | 2.16 | 2.73 | 2.57 |
-| LSH | 164.5 | 10,848.6 | 0.0 | 3.13 | 4.50 | 13.57 |
-| PPR | 0.0 | 0.0 | 0.0 | 4.35 | 4.96 | 2.40 |
-| ALS | 855.9 | 6,336.0 | 0.0 | 3.04 | 4.58 | 2.79 |
+**Limitations.** All runs use Spark in local mode on single laptops; test-run times come from two kinds of
+machine and are not compared (only the one-machine scalability runs are). Tuning used the `user_time` pilot
+and was reused for `global_time`; the ALS and PPR grids changed one or two parameters at a time. PPR used one
+seed. `global_time` cannot evaluate new users or new movies. The growth predictions extrapolate three sizes
+with the catalogue fixed, and resident memory on macOS understates large heaps, so memory is compared by
+JVM heap.
 
-(Full table with every size in `reports/sysmetrics.md`.) At 100% of the users, LSH writes
-the most shuffle data (10,848.6 MB) and also needs the
-most memory (13.57 GB of JVM heap in use, against 2.40 GB for
-PPR). Memory is compared by the JVM heap because the resident memory understates a large heap
-on macOS: `ps` does not count pages that the system has compressed or swapped out, so the resident memory of
-LSH peaked at only 4.50 GB. Exact kNN and PPR collect the training index on the
-driver and broadcast it to the workers, so they shuffle almost nothing; LSH shuffles its (band, bucket) keys
-when it groups users into buckets, and MLlib's ALS shuffles factor blocks in every iteration. The small shuffle
-values of popularity, exact kNN and PPR are not exact: the recommend and evaluate phases are separated by time, and some
-shuffles were written in one phase and read in the other (in `reports/sysmetrics.md`, shuffle write and read differ).
+## 9. Conclusions and Future Work
 
-### 9.6 Notes on the runs
+**RQ1.** ALS gives the best top-10 lists (test NDCG@10 0.1474 on `user_time`, 0.2221 on `global_time`),
+followed by exact kNN and LSH (tied), PPR and popularity. Every method beats popularity on both splits, and
+the ranking does not change on the global split.
 
-- One run was repeated: the first PPR 50% run overlapped a sleep of the laptop (the lid was closed 27 s
-  after the run started), so its time (531.9 s) included sleep. It was run again with the laptop on AC
-  power and kept awake: 62.36 s, with the same NDCG@10. Details are in `tasks/scale.md`.
-- The first 20 runs ran on battery and the last 10 on AC power; Low Power Mode was off on both, so the
-  CPU speed is the same.
+**RQ2.** MinHash-LSH loses almost nothing: 0.9164 neighbour recall@100 and −0.0001 NDCG@10 against exact
+kNN. But with the banding needed to keep that recall it saves no time and moves far more data (10,848.6 MB
+of shuffle, where exact kNN shuffles almost nothing). Monte Carlo PPR at 2,500 walkers overlaps exact PPR by
+0.8732 at about 80 times less computation, so it is the approximation that pays off.
 
-## 10. Conclusion
+**RQ3.** Exact kNN grows as users^1.69 and LSH as users^1.75, so this LSH configuration has no break-even
+size; ALS (0.99) and PPR (0.86) grow about linearly. Four cores speed up kNN and LSH about 2.4–2.5× and the
+results are identical on any number of cores. Peak JVM heap at 100% of the users ranges from 2.40 GB (PPR)
+to 13.57 GB (LSH).
 
-**RQ1: Which method gives the best top-10 lists, and does the ranking change on the global split?** Test
-NDCG@10 with 95% intervals:
+**Overall.** For this data size on one machine, ALS is the best choice for accuracy at linear cost, exact kNN
+is the fastest accurate method but grows fastest, and of the two approximations only Monte Carlo PPR saves
+time.
 
-| Method | user_time | global_time |
-|---|---|---|
-| ALS | 0.1474 [0.1464, 0.1484] | 0.2221 [0.2150, 0.2288] |
-| exact kNN | 0.1367 [0.1357, 0.1377] | 0.2130 [0.2061, 0.2196] |
-| MinHash-LSH | 0.1366 [0.1355, 0.1376] | 0.2125 [0.2054, 0.2190] |
-| PPR | 0.0985 [0.0976, 0.0993] | 0.1589 [0.1531, 0.1645] |
-| popularity | 0.0806 [0.0798, 0.0814] | 0.1438 [0.1383, 0.1494] |
+**Future work.** (1) Tune LSH for time as well as accuracy, for example with multi-probe LSH or a bucket cap
+tuned per band, and test on a larger catalogue where the exact index no longer fits in memory. (2) Run the
+methods on a multi-node cluster, where the broadcast design and LSH's shuffle trade off differently. (3)
+Evaluate cold start for new users and movies, which `global_time` currently excludes, for example with
+genres or tag-genome features. (4) Measure the variance of PPR over several seeds and tune ALS with a full
+grid.
 
-All four methods beat the popularity baseline on every metric on both splits. ALS is the most
-accurate: it beats exact kNN by +0.0107 [+0.0100, +0.0114] NDCG@10 on `user_time` and by
-+0.0091 [+0.0055, +0.0128] on `global_time` (Section 8). Exact kNN and LSH come next and are
-statistically tied. PPR is clearly below kNN (−0.0382 [−0.0390, −0.0375] on `user_time`), but still
-above popularity. The ranking ALS > kNN ≈ LSH > PPR > popularity is the same on both splits.
-`global_time` gives higher precision and NDCG but lower recall for every method; its numbers cannot be
-compared with `user_time`, because it evaluates different and far fewer users (5,542 against 135,599),
-with different targets (Section 2.5).
+## 10. Individual Contributions
 
-**RQ2: What do the approximations cost and save?** For LSH, on accuracy it costs almost nothing. LSH
-finds 0.9164 of the exact top-100 neighbours on the full data, with 0.9898 of their similarity, and its
-recommendations are as good as exact kNN: −0.0001 [−0.0003, +0.0001] NDCG@10 on `user_time` and
-−0.0005 [−0.0014, +0.0004] on `global_time`. But with the chosen parameters it saves no time. On one
-machine, LSH took 535.49 s on all users against 132.33 s for exact kNN (4 cores), and it was slower at
-every data size (Section 9.4). Its banding is loose (2 values per band), so each user still has 11,665.3
-candidates on average, and finding them costs more than exact kNN's direct pass over the item → likers
-index at this data size. Stricter banding cut accuracy in tuning (Section 5.2). It also moves far more
-data: 10,848.6 MB of shuffle at 100% of the users, where exact kNN shuffles almost nothing (Section 9.5).
-
-For Monte Carlo PPR, the top 10 of the chosen 2,500 walkers overlaps the exact PPR top 10 by 0.8732 (raw scores), with NDCG@10 0.0797 against 0.0802 for exact PPR on the same 2,000 users (Section 6.6). At every W tested the walks were faster than the exact computation (1.86 s per 1,000 users at W = 2,500 against 152.68 s for exact PPR).
-At the chosen W the walks are about 80 times faster than the exact computation on the same core; for
-all 130,411 evaluated users of `user_time` the exact scores would take roughly 5.5 hours on one core,
-the walks about 4 minutes. Unlike LSH, the PPR approximation therefore saves time, at the price of
-about one movie in eight in the top 10 (overlap 0.8732).
-
-**RQ3: How do the methods scale?** On one machine (10 CPUs, Apple Silicon, 4 cores used), going from
-50% to 100% of users roughly doubles the time of ALS (190.82 s → 385.66 s), while exact kNN
-(38.91 s → 132.33 s) and LSH (172.75 s → 535.49 s) grow faster than the data, because they compare users
-with each other. PPR (62.36 s → 142.84 s) sits in between, and popularity stays at a few seconds. From 1 to
-4 cores, LSH and kNN gain the most (2.52× and 2.38×), ALS less (1.88×), PPR 1.48×, and popularity
-nothing. Every method gives exactly the same recommendations on 1, 2 and 4 cores. Fitted growth
-exponents are 1.69 for exact kNN, 1.75 for LSH, 0.99 for ALS and 0.86 for PPR (Section 9.4), so with the
-chosen banding LSH has no break-even size against exact kNN: it is predicted to stay slower at ten times
-the users. Peak JVM heap at 100% of the users ranges from 2.40 GB (PPR) to 13.57 GB (LSH), and LSH shuffles the most data (10,848.6 MB; Section 9.5).
-
-**Overall.** ALS gives the best accuracy at a run time that grows in proportion to the data. Exact kNN
-is the fastest of the accurate methods at this data size, but its cost grows fastest with more users.
-LSH matches its accuracy but, with these settings, not its speed. Monte Carlo PPR is the approximation that
-pays off: close to exact PPR (Section 6.6) at a small fraction of its cost, although PPR as a method stays
-below kNN and ALS in accuracy.
-
-**Limitations.** All runs use Spark in local mode on single laptops, so memory, not the cluster, is the
-limit (LSH needed a 14 GB heap). Test-run times come from different machines and are not compared; only
-the scalability runs (Section 9) are. `global_time` cannot evaluate new users or new movies. The growth
-predictions extrapolate three data sizes and keep the catalogue fixed.
+| Member | Contribution |
+|---|---|
+| Vineeth Donthamsetty | ALS (tuning analysis, test runs, report section); evaluation-protocol section; integration of all branches, result verification and paired comparisons; the 30 scalability runs; growth and break-even analysis, exact-PPR comparison, shuffle and memory measurements; report assembly |
+| Godfred Nanoa | Shared foundation: ingestion and cleaning, the two splits, evaluation, run harness, the five method implementations and their pilot tuning, group workflow tools; exact kNN test runs and report section |
+| Iruobe Akpatason | Monte Carlo PPR test runs, analysis and report section; dataset section of the report |
+| Ravan Maharramli | MinHash-LSH test runs, full-data neighbour-recall measurement and report section |
 
 ## References
 
@@ -1023,3 +588,232 @@ predictions extrapolate three data sizes and keep the catalogue fixed.
 [16] Apache Software Foundation, “Collaborative filtering,” Apache Spark 4.0.1 Documentation. [Online]. Available: https://spark.apache.org/docs/4.0.1/ml-collaborative-filtering.html (accessed Oct. 19, 2026).
 
 [17] K. Järvelin and J. Kekäläinen, “Cumulated gain-based evaluation of IR techniques,” ACM Trans. Inf. Syst., vol. 20, no. 4, pp. 422–446, Oct. 2002.
+
+[18] B. Paudel, F. Christoffel, C. Newell, and A. Bernstein, “Updatable, accurate, diverse, and scalable recommendations for interactive applications,” ACM Trans. Interact. Intell. Syst., vol. 7, no. 1, Art. no. 1, 2017, doi: 10.1145/2955101.
+
+## Appendix A. Tuning on the validation stage of `user_time_10pct`
+
+All runs on the validation stage of the 10% pilot (12,905 evaluated users); the test part was never read.
+Recommend times come from the group's tuning machine. The chosen row is in bold.
+
+### A.1 Exact user-kNN
+
+| Configuration | P@10 | R@10 | NDCG@10 | Coverage | Recommend s |
+|---|---|---|---|---|---|
+| **100 neighbours, cosine (chosen)** | 0.0638 | 0.1310 | 0.1081 | 0.0533 | 74 |
+| 100 neighbours, Jaccard | 0.0628 | 0.1290 | 0.1065 | 0.0558 | 54 |
+| 50 neighbours, Jaccard (default) | 0.0624 | 0.1275 | 0.1057 | 0.0792 | 57 |
+| 200 neighbours, Jaccard | 0.0618 | 0.1266 | 0.1050 | 0.0420 | 56 |
+| 20 neighbours, Jaccard | 0.0605 | 0.1222 | 0.1021 | 0.1196 | 80 |
+
+Accuracy changes little between 50 and 200 neighbours and is best at 100; cosine is slightly better than
+Jaccard. Fewer neighbours give more varied lists (coverage 0.120 with 20 neighbours, 0.042 with 200).
+
+### A.2 MinHash-LSH
+
+Unlisted parameters keep their defaults: n_hashes 128, bands 32, n_neighbours 50, max_bucket 2,000, Jaccard.
+
+| Tag | Parameters | P@10 | R@10 | NDCG@10 | Coverage | Recommend (s) |
+|---|---|---|---|---|---|---|
+| **chosen** | **n_hashes 256, bands 128, cosine, n_neighbours 100** | **0.0633** | **0.1295** | **0.1068** | **0.0773** | **152.6** |
+| h64_b64 | n_hashes 64, bands 64 | 0.0624 | 0.1277 | 0.1058 | 0.0800 | 265.56 |
+| h128_b128 | n_hashes 128, bands 128 | 0.0624 | 0.1276 | 0.1057 | 0.0800 | 309.1 |
+| h256_b128 | n_hashes 256, bands 128 | 0.0623 | 0.1265 | 0.1049 | 0.0908 | 156.24 |
+| h128_b64 | n_hashes 128, bands 64 | 0.0614 | 0.1236 | 0.1027 | 0.1028 | 128.35 |
+| h128_b64_mb5000 | n_hashes 128, bands 64, max_bucket 5,000 | 0.0614 | 0.1236 | 0.1027 | 0.1028 | 116.91 |
+| default | (defaults) | 0.0463 | 0.0994 | 0.0801 | 0.1537 | 112.49 |
+
+On the pilot, the chosen configuration found 0.8247 of the exact top-100 neighbours with 1,885.7 candidates
+per user. During the LSH test runs, each user had 12,493.0 candidates on average on `user_time` (360 users without candidates; 206 buckets with more than 2,000 users skipped) and 13,221.8 on `global_time` (142 users without candidates; 165 buckets skipped).
+
+### A.3 Monte Carlo PPR
+
+Unlisted parameters keep their defaults: alpha 0.3, n_walkers 100, n_steps 20, beta 0, min_visits 1.
+
+| Tag | Parameters | P@10 | R@10 | NDCG@10 | Coverage | Recommend (s) |
+|---|---|---|---|---|---|---|
+| **a0.3_w2500_b0.3_mv10 (chosen)** | **alpha 0.3, 2500 walkers, beta 0.3, min_visits 10** | **0.0462** | **0.0963** | **0.0800** | **0.0462** | **120.08** |
+| a0.5_w1000 | alpha 0.5, 1000 walkers | 0.0453 | 0.0929 | 0.0781 | 0.0214 | 91.58 |
+| a0.3_w1000_b0.3_mv5 | alpha 0.3, 1000 walkers, beta 0.3, min_visits 5 | 0.0455 | 0.0933 | 0.0780 | 0.0607 | 137.98 |
+| a0.3_w1000_b0.5_mv10 | alpha 0.3, 1000 walkers, beta 0.5, min_visits 10 | 0.0454 | 0.0959 | 0.0776 | 0.1427 | 153.91 |
+| a0.3_w2500 | alpha 0.3, 2500 walkers | 0.0440 | 0.0896 | 0.0763 | 0.0142 | 158.4 |
+| a0.3_w1000 | alpha 0.3, 1000 walkers | 0.0439 | 0.0882 | 0.0757 | 0.0163 | 98.21 |
+| a0.3_w250 | alpha 0.3, 250 walkers | 0.0406 | 0.0826 | 0.0689 | 0.0291 | 69.24 |
+| a0.3 | alpha 0.3 | 0.0356 | 0.0731 | 0.0608 | 0.0499 | 65.12 |
+| default | (defaults) | 0.0356 | 0.0731 | 0.0608 | 0.0499 | 67.2 |
+| a0.5 | alpha 0.5 | 0.0348 | 0.0739 | 0.0606 | 0.0689 | 65.4 |
+| a0.1 | alpha 0.1 | 0.0340 | 0.0670 | 0.0581 | 0.0412 | 75.96 |
+| a0.3_b0.3 | alpha 0.3, beta 0.3 | 0.0113 | 0.0309 | 0.0226 | 0.7236 | 76.45 |
+| a0.5_b0.5 | alpha 0.5, beta 0.5 | 0.0002 | 0.0007 | 0.0004 | 0.5874 | 74.75 |
+| a0.3_b0.5 | alpha 0.3, beta 0.5 | 0.0001 | 0.0004 | 0.0002 | 0.5507 | 66.09 |
+| a0.3_b0.7 | alpha 0.3, beta 0.7 | 0.0001 | 0.0002 | 0.0002 | 0.4682 | 66.51 |
+
+More walkers help with diminishing returns (alpha 0.3, no penalty: 0.0608 with 100 walkers, 0.0757 with
+1,000, 0.0763 with 2,500). The penalty beta works only together with min_visits; without the visit filter it
+collapses NDCG@10. The restart probability mattered little at 100 walkers.
+
+### A.4 ALS
+
+Unlisted parameters keep their defaults: rank 64, alpha 10, reg 0.05, 10 iterations, likes as the signal.
+
+| Tag | Parameters | P@10 | R@10 | NDCG@10 | Coverage | Recommend (s) |
+|---|---|---|---|---|---|---|
+| **r128_a1_reg0.1 (chosen)** | **rank 128, alpha 1, reg 0.1** | **0.0688** | **0.1412** | **0.1170** | **0.1095** | **383.89** |
+| r64_a0.3 | rank 64, alpha 0.3 | 0.0668 | 0.1346 | 0.1128 | 0.0720 | 109.03 |
+| r64_a1 | rank 64, alpha 1 | 0.0667 | 0.1355 | 0.1127 | 0.0783 | 123.38 |
+| r64_a3 | rank 64, alpha 3 | 0.0657 | 0.1356 | 0.1107 | 0.0936 | 131.68 |
+| r128_a1 | rank 128, alpha 1 | 0.0643 | 0.1306 | 0.1095 | 0.0997 | 279.28 |
+| r128_a1_it15 | rank 128, alpha 1, 15 iterations | 0.0639 | 0.1293 | 0.1091 | 0.1005 | 393.65 |
+| r128 | rank 128 | 0.0604 | 0.1281 | 0.1030 | 0.1361 | 282.36 |
+| r64_reg0.1 | rank 64, reg 0.1 | 0.0618 | 0.1283 | 0.1025 | 0.1236 | 124.65 |
+| default | (defaults) | 0.0610 | 0.1275 | 0.1019 | 0.1186 | 115.95 |
+| r64 | rank 64 | 0.0610 | 0.1275 | 0.1019 | 0.1186 | 116.22 |
+| r64_reg0.01 | rank 64, reg 0.01 | 0.0609 | 0.1267 | 0.1015 | 0.1144 | 122.41 |
+| r32 | rank 32 | 0.0614 | 0.1240 | 0.1008 | 0.0994 | 78.68 |
+| r64_a40 | rank 64, alpha 40 | 0.0521 | 0.1129 | 0.0870 | 0.1543 | 122.21 |
+| r64_rating | rank 64, ratings as confidence | 0.0399 | 0.0902 | 0.0659 | 0.2062 | 137.75 |
+
+The confidence weight alpha mattered most. Rank and reg helped only slightly, and without a rank-64,
+alpha-1, reg-0.1 run the effect of rank cannot be separated from that of reg; 15 iterations did not help.
+
+## Appendix B. Split statistics
+
+| Split | Part | Ratings | Share | Users | Movies | Likes |
+|---|---|---|---|---|---|---|
+| user_time | train | 13,883,097 | 69.41% | 138,493 | 20,656 | 7,087,069 |
+| | val | 2,062,715 | 10.31% | 138,493 | 18,513 | 983,364 |
+| | test | 4,054,451 | 20.27% | 138,493 | 25,139 | 1,924,977 |
+| user_time_10pct | train | 1,382,688 | 69.42% | 13,671 | 13,616 | 705,219 |
+| | val | 205,444 | 10.31% | 13,671 | 10,924 | 97,529 |
+| | test | 403,760 | 20.27% | 13,671 | 14,654 | 190,945 |
+| global_time | train | 14,000,184 | 70.0% | 100,793 | 9,696 | 7,047,751 |
+| | val | 2,000,026 | 10.0% | 16,322 | 12,126 | 949,046 |
+| | test | 4,000,053 | 20.0% | 31,670 | 26,349 | 1,998,613 |
+| global_time_10pct | train | 1,400,308 | 70.3% | 9,936 | 9,127 | 704,545 |
+| | val | 193,560 | 9.72% | 1,605 | 8,229 | 93,261 |
+| | test | 398,024 | 19.98% | 3,168 | 14,557 | 195,887 |
+
+| Split | Stage | Evaluable users | Target users without history | Target likes on movies unseen in training |
+|---|---|---|---|---|
+| user_time | val | 130,411 | 0 | 453 of 983,364 |
+| user_time | test | 135,599 | 0 | 1,782 of 1,924,977 |
+| user_time_10pct | val | 12,905 | 0 | 284 of 97,529 |
+| user_time_10pct | test | 13,385 | 0 | 985 of 190,945 |
+| global_time | val | 4,538 | 11,673 | 93,714 of 949,046 |
+| global_time | test | 5,542 | 26,027 | 300,783 of 1,998,613 |
+| global_time_10pct | val | 447 | 1,146 | 9,525 of 93,261 |
+| global_time_10pct | test | 568 | 2,589 | 31,287 of 195,887 |
+
+## Appendix C. Paired comparisons
+
+Each method against popularity (paired bootstrap, 1,000 resamples of the same users; Δ = method − popularity):
+
+**Exact kNN**
+
+| Split | Metric | Difference | 95% interval |
+|---|---|---|---|
+| user_time | Precision@10 | +0.0415 | [+0.0409, +0.0421] |
+| user_time | Recall@10 | +0.0521 | [+0.0511, +0.0530] |
+| user_time | NDCG@10 | +0.0561 | [+0.0552, +0.0570] |
+| global_time | Precision@10 | +0.0636 | [+0.0599, +0.0672] |
+| global_time | Recall@10 | +0.0166 | [+0.0146, +0.0187] |
+| global_time | NDCG@10 | +0.0692 | [+0.0648, +0.0733] |
+
+**MinHash-LSH**
+
+| Split | Users | ΔP@10 [95% CI] | ΔR@10 [95% CI] | ΔNDCG@10 [95% CI] |
+|---|---|---|---|---|
+| user_time | 135,599 | +0.0414 [+0.0408, +0.0421] | +0.0519 [+0.0509, +0.0527] | +0.0560 [+0.0551, +0.0568] |
+| global_time | 5,542 | +0.0639 [+0.0603, +0.0675] | +0.0168 [+0.0147, +0.0190] | +0.0687 [+0.0643, +0.0728] |
+
+**Monte Carlo PPR**
+
+| Split | Users | ΔP@10 [95% CI] | ΔR@10 [95% CI] | ΔNDCG@10 [95% CI] |
+|---|---|---|---|---|
+| user_time | 135,599 | +0.0130 [+0.0127, +0.0133] | +0.0201 [+0.0196, +0.0207] | +0.0179 [+0.0174, +0.0183] |
+| global_time | 5,542 | +0.0153 [+0.0135, +0.0170] | +0.0033 [+0.0021, +0.0044] | +0.0151 [+0.0131, +0.0170] |
+
+**ALS**
+
+| Split | Users | ΔP@10 [95% CI] | ΔR@10 [95% CI] | ΔNDCG@10 [95% CI] |
+|---|---|---|---|---|
+| user_time | 135,599 | +0.0502 [+0.0495, +0.0509] | +0.0596 [+0.0586, +0.0607] | +0.0668 [+0.0658, +0.0678] |
+| global_time | 5,542 | +0.0732 [+0.0684, +0.0780] | +0.0181 [+0.0155, +0.0209] | +0.0783 [+0.0729, +0.0836] |
+
+Between methods on `user_time` (135,599 users):
+
+| A − B | ΔP@10 [95% CI] | ΔR@10 [95% CI] | ΔNDCG@10 [95% CI] | P(A ≤ B), NDCG |
+|---|---|---|---|---|
+| LSH − kNN | −0.0001 [−0.0002, +0.0000] | −0.0002 [−0.0005, +0.0000] | −0.0001 [−0.0003, +0.0001] | 0.918 |
+| ALS − kNN | +0.0086 [+0.0081, +0.0091] | +0.0076 [+0.0068, +0.0084] | +0.0107 [+0.0100, +0.0114] | 0.000 |
+| PPR − kNN | −0.0285 [−0.0291, −0.0279] | −0.0319 [−0.0328, −0.0312] | −0.0382 [−0.0390, −0.0375] | 1.000 |
+| ALS − LSH | +0.0088 [+0.0083, +0.0092] | +0.0078 [+0.0070, +0.0086] | +0.0108 [+0.0101, +0.0115] | 0.000 |
+| ALS − PPR | +0.0371 [+0.0365, +0.0378] | +0.0395 [+0.0386, +0.0405] | +0.0489 [+0.0480, +0.0498] | 0.000 |
+| ALS − popularity | +0.0502 [+0.0495, +0.0509] | +0.0596 [+0.0586, +0.0607] | +0.0668 [+0.0658, +0.0678] | 0.000 |
+
+Between methods on `global_time` (5,542 users):
+
+| A − B | ΔP@10 [95% CI] | ΔR@10 [95% CI] | ΔNDCG@10 [95% CI] | P(A ≤ B), NDCG |
+|---|---|---|---|---|
+| LSH − kNN | +0.0003 [−0.0007, +0.0012] | +0.0002 [−0.0003, +0.0007] | −0.0005 [−0.0014, +0.0004] | 0.854 |
+| ALS − kNN | +0.0096 [+0.0064, +0.0131] | +0.0015 [−0.0006, +0.0038] | +0.0091 [+0.0055, +0.0128] | 0.000 |
+| PPR − kNN | −0.0483 [−0.0515, −0.0450] | −0.0133 [−0.0151, −0.0116] | −0.0540 [−0.0578, −0.0504] | 1.000 |
+| ALS − LSH | +0.0093 [+0.0059, +0.0126] | +0.0013 [−0.0008, +0.0036] | +0.0096 [+0.0061, +0.0133] | 0.000 |
+| ALS − PPR | +0.0579 [+0.0534, +0.0625] | +0.0149 [+0.0123, +0.0175] | +0.0632 [+0.0582, +0.0681] | 0.000 |
+| ALS − popularity | +0.0732 [+0.0684, +0.0780] | +0.0181 [+0.0155, +0.0209] | +0.0783 [+0.0729, +0.0836] | 0.000 |
+
+## Appendix D. Shuffle, memory and notes on the runs
+
+Full output of `tools/sysmetrics.py` (`reports/sysmetrics.md`). Shuffle and spill cover the recommend phase;
+peak memory is the resident memory of the Python driver, the Spark JVM and the Python workers together.
+
+| Method | Users | Shuffle write (MB) | Shuffle read (MB) | Spilled to disk (MB) | Peak memory (GB) | Peak JVM heap (GB) |
+|---|---|---|---|---|---|---|
+| popularity | 10% (12,905) | 4.8 | 5.3 | 0.0 | 2.07 | n/a |
+| popularity | 25% (32,278) | 19.4 | 20.1 | 0.0 | 2.00 | n/a |
+| popularity | 50% (64,883) | 43.3 | 38.7 | 0.0 | 3.05 | 1.88 |
+| popularity | 100% (130,411) | 41.9 | 42.8 | 0.0 | 3.13 | 2.65 |
+| knn | 10% (12,905) | 3.8 | 3.8 | 0.0 | 2.16 | 1.31 |
+| knn | 25% (32,278) | 0.0 | 0.0 | 0.0 | 2.48 | 0.43 |
+| knn | 50% (64,883) | 19.2 | 0.0 | 0.0 | 3.07 | 2.07 |
+| knn | 100% (130,411) | 0.0 | 0.0 | 0.0 | 2.73 | 2.57 |
+| lsh | 10% (12,905) | 164.5 | 164.5 | 0.0 | 3.13 | 2.56 |
+| lsh | 25% (32,278) | 985.3 | 985.3 | 0.0 | 3.26 | 3.25 |
+| lsh | 50% (64,883) | 3,594.7 | 3,594.7 | 0.0 | 4.10 | 8.01 |
+| lsh | 100% (130,411) | 10,848.6 | 10,848.6 | 0.0 | 4.50 | 13.57 |
+| ppr | 10% (12,905) | 0.0 | 0.0 | 0.0 | 4.35 | 0.73 |
+| ppr | 25% (32,278) | 8.6 | 0.0 | 0.0 | 4.12 | 0.78 |
+| ppr | 50% (64,883) | 17.2 | 0.0 | 0.0 | 3.94 | 1.55 |
+| ppr | 100% (130,411) | 0.0 | 0.0 | 0.0 | 4.96 | 2.40 |
+| als | 10% (12,905) | 855.9 | 855.9 | 0.0 | 3.04 | 0.94 |
+| als | 25% (32,278) | 1,813.1 | 1,813.1 | 0.0 | 3.54 | 1.24 |
+| als | 50% (64,883) | 3,339.6 | 3,339.6 | 0.0 | 3.67 | 1.43 |
+| als | 100% (130,411) | 6,336.0 | 6,336.0 | 0.0 | 4.58 | 2.79 |
+
+Resident memory understates a large heap on macOS, because `ps` does not count pages that the system has
+compressed or swapped out (LSH: 4.50 GB resident against a 13.57 GB JVM heap), so the main text compares
+memory by JVM heap. The small shuffle values of popularity, kNN and PPR come from separating the recommend
+and evaluation phases by time; in those rows shuffle write and read differ.
+
+Notes on the scalability runs:
+
+- One run was repeated: the first PPR 50% run overlapped a sleep of the laptop (the lid was closed 27 s
+  after the run started), so its time (531.9 s) included sleep. It was run again with the laptop on AC
+  power and kept awake: 62.36 s, with the same NDCG@10. Details are in `tasks/scale.md`.
+- The first 20 runs ran on battery and the last 10 on AC power; Low Power Mode was off on both, so the
+  CPU speed is the same.
+
+## Appendix E. Reproducing the experiments
+
+The repository README gives full instructions. In short, with Python 3.11, Java 17 and `ml-20m` unzipped to
+`data/raw/ml-20m/`:
+
+```
+pip install -r requirements.txt && python -m pytest -q
+python -m src.ingest && python -m src.split
+python -m src.run --method <popularity|knn|lsh|ppr|als> --split user_time_10pct --stage val --param key=value
+python tools/member.py test <method>              # test stage with tools/chosen.json, once per split
+python tools/compare.py <run A> <run B>           # paired bootstrap
+python tools/scale.py; python tools/growth.py     # scalability runs and growth fits
+python tools/lsh_recall.py; python tools/ppr_exact.py; python tools/sysmetrics.py
+```

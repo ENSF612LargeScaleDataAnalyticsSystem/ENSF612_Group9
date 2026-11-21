@@ -15,7 +15,7 @@ pilot validation NDCG@10 (for example ALS 0.117001, kNN 0.1081).
 **All 30 timings come from one machine:** macOS 27.0.1 on Apple Silicon (arm64), 10 CPUs, 24 GB RAM,
 Spark 4.0.1 in local mode, `--driver-memory 14g` for every run (8g ran out of memory for LSH on this
 machine). Only these timings can be compared with each other. The "recommend seconds" in the test-result
-tables of the method sections come from different machines (Section 3.5 of the report) and must **not** be compared across
+tables of the method sections come from different machines (Section 5 of the report) and must **not** be compared across
 methods.
 
 "Recommend time" is the wall-clock time of the method's `recommend` call: building the index, training
